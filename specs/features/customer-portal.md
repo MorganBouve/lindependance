@@ -174,8 +174,12 @@ client doit d'abord être créé par le staff.
 - La réservation client est possible uniquement si une ou plusieurs fiches
   `Customer` existent déjà dans cette organisation avec l'email vérifié par
   OTP. Si aucune fiche correspondante n'existe, ne pas créer de client ni
-  permettre la réservation ; afficher un message neutre invitant à contacter
-  l'organisation.
+  permettre la réservation ; inviter le visiteur à appeler le salon pour un
+  premier rendez-vous. Cette consigne est affichée à tout visiteur non
+  authentifié, sans dépendre de l'adresse saisie ou de l'existence d'une fiche,
+  afin de ne pas révéler cette information. Si aucun téléphone public n'est
+  configuré, inviter le visiteur à contacter le salon avec les coordonnées
+  publiques disponibles.
 - Si l'email vérifié correspond à plusieurs fiches (ex. mère et enfant), le
   portail affiche un sélecteur **« Pour qui est le rendez-vous ? »** avec les
   noms des fiches autorisées. Le client choisit la personne avant de réserver ;

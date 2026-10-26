@@ -80,7 +80,10 @@ information appartenant à un autre salon.
 **Résultat / preuve :** PARTIEL — le portail Osez l'Etre affiche le nom du salon
 et son logo après ouverture directe du lien. La racine `testing.osezletre.fr`
 doit être associée au salon Osez l'Etre par un `TECH_ADMIN` depuis
-`/tech-admin/portal-domains` après application de la migration.
+`/tech-admin/portal-domains` après application de la migration. Le 26/10/2026,
+le lien direct `/portail/qa-salon-reel-20261026-1054-c8f24a/reserver` a aussi
+ouvert le nouveau salon de recette et affiché son nom et son contact public.
+Le domaine racine, le logo et l'apparence de ce nouveau salon restent à vérifier.
 
 #### [ ] CUS-02 — Choisir une prestation, un coiffeur, une date et un horaire
 **Priorité : P0 · Exigence :** [Req: formal — `customer-portal-phase-1.md`, parcours de réservation]
@@ -108,7 +111,10 @@ disponible pour les deux durées. Un seul coiffeur étant proposé, le choix ent
 plusieurs coiffeurs et le cas `ORG-SOLO` restent à vérifier.
 La limite de 60 jours est couverte par des tests locaux de la date maximale,
 de la borne exacte et du refus côté API ; sa vérification manuelle en
-préproduction reste à faire après déploiement.
+préproduction reste à faire après déploiement. Le 26/10/2026, sur le nouveau
+salon de recette, une prestation gratuite de 30 minutes et l'unique praticien
+actif ont proposé des créneaux entre 09 h et 17 h (Europe/Paris) ; le créneau
+de 15 h 30 a été réservé. Le parcours avec plusieurs praticiens reste à tester.
 
 #### [ ] CUS-03 — Vérifier les dates et heures des rendez-vous
 **Priorité : P1 · Exigence :** [Req: formal — `customer-portal.md`, §5.4]
@@ -128,20 +134,36 @@ de fuseau et DST ; le parcours réel sur appareil reste à valider.
 #### [ ] CUS-05 — Recevoir un code de connexion par e-mail
 **Priorité : P0 · Exigence :** [Req: formal — `customer-portal.md`, §2]
 
-**Étapes :** demandez un code pour `ORG-A`, puis recommencez pour `ORG-B` avec
-une adresse de test qui peut recevoir les messages.
+**Étapes :** ouvrez la réservation sans session client. Avant de saisir une
+adresse, vérifiez la consigne pour un premier rendez-vous et les coordonnées
+publiques du salon. Demandez ensuite un code pour `ORG-A`, puis recommencez
+pour `ORG-B` avec une adresse de test qui peut recevoir les messages.
 
 **Attendu :** le message affiché reste simple et ne révèle pas si une adresse
 est déjà connue du salon. Le message de `ORG-A` reprend le texte choisi par
 le salon et contient son nom ainsi que le code reçu. Le message de `ORG-B`
 utilise le texte par défaut ; le code fonctionne dans les deux cas.
+La consigne de premier rendez-vous est visible pour toute personne non
+authentifiée, indique d'appeler le salon si un téléphone est configuré et ne
+change pas selon l'adresse saisie.
 
 **Automatisé :** `test/api/customer-portal-request-code.spec.ts`,
 `test/services/customerPortalEmail.spec.ts`,
 `test/domain/customer-portal/emailTemplates.spec.ts`.
-**Résultat / preuve :** `________`
+**Résultat / preuve :** PARTIEL — 26/10/2026 en préproduction, un code a
+permis de vérifier l'adresse du profil client du nouveau salon. Lors d'une
+nouvelle recette à 16 h 02, un code indépendant et un code de remplacement ont
+été reçus en moins de 2 minutes ; l'ancien a été refusé et le nouveau accepté.
+Le premier essai de la journée avait été retardé, sans que ce délai se
+reproduise. Le parcours d'un second salon et ses modèles d'e-mail restent à
+vérifier. Une demande a aussi été faite pour le second profil de recette ; la
+page a affiché la réponse générique, mais le testeur n'a pas reçu de code. Le
+profil staff contient une adresse enregistrée, sans que sa correspondance avec
+la boîte surveillée ait été confirmée. La consigne de premier rendez-vous est
+implémentée localement ; sa vérification manuelle en préproduction attend la
+publication.
 
-#### [ ] CUS-06 — Utiliser le code de connexion
+#### [x] CUS-06 — Utiliser le code de connexion
 **Priorité : P0 · Exigence :** [Req: formal — `customer-portal.md`, §2 et sécurité]
 
 **Étapes :** connectez-vous avec le code reçu par e-mail. Si vous demandez un
@@ -153,9 +175,11 @@ comment demander un nouveau code.
 
 **Automatisé :** `test/api/customer-portal-verify-code.spec.ts` couvre les
 codes invalides/consommés/expirés ; `test/domain/customer-portal/rateLimit.spec.ts`
-couvre la fenêtre glissante. Renvoi, essais réels, IP et envoi e-mail restent
-à confirmer dans l'environnement bêta.
-**Résultat / preuve :** `________`
+couvre la fenêtre glissante. Le renvoi et la vérification réelle ont aussi été
+testés en préproduction ; les quotas par IP restent à vérifier.
+**Résultat / preuve :** PASS — 26/10/2026 en préproduction, le code initial a
+été refusé après demande d'un remplacement (`Invalid or expired code`) et le
+nouveau code, reçu en moins de 2 minutes, a permis d'ouvrir l'espace client.
 
 #### [ ] CUS-07 — Retrouver les rendez-vous de votre famille
 **Priorité : P0 · Exigence :** [Req: formal — `customer-portal-phase-1.md`, identité et réservation]
@@ -193,7 +217,11 @@ Avant l'envoi, le service et son prix, la date, le profil client et le créneau
 étaient visibles dans les champs, mais aucun écran récapitulatif distinct
 n'était présenté. Le portail a indiqué que les e-mails avec invitation
 calendrier étaient envoyés ; la réception de ces deux nouveaux messages n'a pas
-été revérifiée.
+été revérifiée. Le 26/10/2026, une réservation de 30 minutes à 0 € a réussi
+sur le nouveau salon, avec Morgan Bouve, le 26/10 à 15 h 30. Le rendez-vous est
+apparu dans « Mes rendez-vous » et dans l'agenda staff ; il a ensuite été
+supprimé après vérification des e-mails afin de ne laisser aucun rendez-vous
+actif.
 
 #### [ ] CUS-09 — Éviter une double réservation
 **Priorité : P0 · Exigence :** [Req: formal — `customer-portal.md`, §4bis et protocole de test]
@@ -226,7 +254,11 @@ pas de réservation supplémentaire.
 `test/api/customer-portal-booking.spec.ts`,
 `test/domain/customer-portal/emailTemplates.spec.ts`. Le fournisseur réel et
 l'import dans une application calendrier sont à vérifier manuellement.
-**Résultat / preuve :** `________`
+**Résultat / preuve :** PARTIEL — 26/10/2026 en préproduction, l'utilisateur
+a confirmé la réception de l'e-mail de confirmation et de l'invitation
+calendrier pour la réservation du nouveau salon. Le rendez-vous a été supprimé
+après vérification. L'import dans l'agenda et le parcours d'une seconde
+organisation n'ont pas été testés.
 
 #### [x] CUS-11 — Retrouver vos prochains rendez-vous
 **Priorité : P0 · Exigence :** [Req: formal — `customer-portal-phase-2.md`, DoD 1–2, 6]

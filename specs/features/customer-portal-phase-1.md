@@ -45,6 +45,11 @@ Le MVP est activable par organisation et ne crée pas de compte client autonome.
 - Le formulaire affiche une aide neutre invitant à contacter le salon si le
   client ne reçoit pas de code, avec les coordonnées publiques configurées.
   La réponse de demande OTP reste identique qu'une fiche existe ou non.
+- Tant qu'il n'est pas authentifié, le visiteur voit aussi une consigne
+  générique : pour un premier rendez-vous, appeler le salon ; si aucun téléphone
+  public n'est configuré, contacter le salon avec les coordonnées disponibles.
+  Cette consigne ne dépend jamais de l'adresse saisie ni de l'existence d'une
+  fiche client.
 - Rate limit distribué standard : 3 envois par email/15 min, 10 demandes par
   IP/heure (demande ou vérification OTP). Seule la preview Vercel de la
   branche `preprod` utilise les plafonds de recette de 10 envois par email/15
