@@ -283,37 +283,44 @@ export default function PortalBooking({
                 )}
               </>
             ) : (
-              <form onSubmit={codeRequested ? verifyCode : requestCode} className="space-y-3">
-                {!codeRequested && (
-                  <label className="block text-sm font-medium">
-                    Email enregistré sur votre fiche client
-                    <input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} className="mt-1 block w-full rounded-lg border border-gray-300 p-3" />
-                  </label>
-                )}
-                {codeRequested && (
-                  <>
-                    <p className="text-sm text-gray-600">Si cet email correspond à une fiche client, un code à 6 chiffres lui a été envoyé.</p>
+              <>
+                <p className="text-sm text-gray-600">
+                  {portalContactPhone
+                    ? 'Pour un premier rendez-vous, appelez le salon.'
+                    : 'Pour un premier rendez-vous, contactez le salon avant de réserver.'}
+                </p>
+                <form onSubmit={codeRequested ? verifyCode : requestCode} className="space-y-3">
+                  {!codeRequested && (
                     <label className="block text-sm font-medium">
-                      Code de vérification
-                      <input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={code} onChange={(event) => setCode(event.target.value)} className="mt-1 block w-full rounded-lg border border-gray-300 p-3" />
+                      Email enregistré sur votre fiche client
+                      <input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} className="mt-1 block w-full rounded-lg border border-gray-300 p-3" />
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCodeRequested(false)
-                        setCode('')
-                        setError('')
-                      }}
-                      className="text-sm text-indigo-700 underline"
-                    >
-                      Modifier l’email ou demander un nouveau code
-                    </button>
-                  </>
-                )}
-                <button className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white">
-                  {codeRequested ? 'Vérifier le code' : 'Recevoir un code'}
-                </button>
-              </form>
+                  )}
+                  {codeRequested && (
+                    <>
+                      <p className="text-sm text-gray-600">Si cet email correspond à une fiche client, un code à 6 chiffres lui a été envoyé.</p>
+                      <label className="block text-sm font-medium">
+                        Code de vérification
+                        <input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={code} onChange={(event) => setCode(event.target.value)} className="mt-1 block w-full rounded-lg border border-gray-300 p-3" />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCodeRequested(false)
+                          setCode('')
+                          setError('')
+                        }}
+                        className="text-sm text-indigo-700 underline"
+                      >
+                        Modifier l’email ou demander un nouveau code
+                      </button>
+                    </>
+                  )}
+                  <button className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white">
+                    {codeRequested ? 'Vérifier le code' : 'Recevoir un code'}
+                  </button>
+                </form>
+              </>
             )}
             <aside className="rounded-lg bg-gray-50 p-4 text-sm text-gray-700">
               <p className="font-medium">Vous ne recevez pas de code ? Contactez le salon.</p>

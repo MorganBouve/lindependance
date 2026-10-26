@@ -67,6 +67,28 @@ describe('PortalBooking', () => {
 
     expect(await screen.findByText('Salon Élise')).toBeInTheDocument()
     expect(await screen.findByRole('link', { name: 'Accès équipe' })).toHaveAttribute('href', '/auth/signin')
+    expect(screen.getByText('Pour un premier rendez-vous, contactez le salon avant de réserver.')).toBeInTheDocument()
+  })
+
+  it('tells first-time visitors to call the salon when a phone number is available', async () => {
+    render(
+      <PortalBooking
+        organizationSlug="osezletre"
+        organizationTimezone="Europe/Paris"
+        organizationName="Salon Élise"
+        branding={DEFAULT_ORGANIZATION_BRANDING}
+        portalContactPhone="01 23 45 67 89"
+        portalContactEmail={null}
+      />,
+    )
+
+    expect(await screen.findByText('Salon Élise')).toBeInTheDocument()
+    const firstAppointmentMessage = screen.getByText('Pour un premier rendez-vous, appelez le salon.')
+    const emailInput = screen.getByLabelText('Email enregistré sur votre fiche client')
+    expect(
+      firstAppointmentMessage.compareDocumentPosition(emailInput) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+    expect(screen.getByRole('link', { name: '01 23 45 67 89' })).toHaveAttribute('href', 'tel:0123456789')
   })
 
   it('shows neutral help about contacting the salon without checking the submitted email', async () => {

@@ -42,6 +42,18 @@ en cours de traitement.
 
 ### Portail client — réservation en ligne
 
+#### Guider les nouveaux clients vers un appel au salon
+
+- **Type :** Amélioration
+- **Statut :** Implémentée localement et couverte par un test UI ; validation manuelle en préproduction après publication.
+- **Priorité proposée :** P1
+- **Constat :** La réservation en ligne est limitée aux personnes dont l'adresse correspond à une fiche client déjà créée par le salon. Un nouveau client peut ne pas comprendre pourquoi il ne reçoit pas de code.
+- **Amélioration souhaitée :** Expliquer sur le portail qu'un premier rendez-vous nécessite de contacter le salon, avec une consigne d'appel lorsque son téléphone public est configuré.
+- **Critères d'acceptation :**
+  - Tout visiteur non authentifié voit la consigne, sans qu'elle dépende de l'adresse saisie ou de l'existence d'une fiche client.
+  - Si un téléphone public est configuré, la consigne invite à appeler et le numéro reste cliquable ; sans téléphone, elle invite à contacter le salon par le canal public disponible.
+  - La réponse de demande de code reste générique et le parcours public ne crée aucune fiche client.
+
 #### Limiter les réservations à deux mois glissants
 
 - **Type :** Amélioration
@@ -580,7 +592,7 @@ continue de vérifier l'accès à l'e-mail au moment de la connexion grâce au c
 #### Créer un salon réel et son premier ADMIN depuis TECH_ADMIN
 
 - **Type :** Amélioration
-- **Statut :** Implémentée localement — tests ciblés, lint, type-check et build validés ; vérification bêta avec une boîte contrôlée encore à effectuer.
+- **Statut :** Implémentée et vérifiée en préproduction le 26 octobre 2026 ; production non testée.
 - **Priorité proposée :** P1
 - **Constat :** L'écran TECH_ADMIN permet de préparer des données fictives en préproduction, mais ne propose pas de parcours pour créer un vrai salon et son premier compte de connexion. Cette configuration nécessite encore une intervention manuelle dans la base.
 - **Amélioration souhaitée :** Permettre à TECH_ADMIN de créer un salon réel et son premier ADMIN depuis l'écran de gestion, en préproduction comme en production, chaque déploiement écrivant dans sa propre base.
@@ -592,7 +604,7 @@ continue de vérifier l'accès à l'e-mail au moment de la connexion grâce au c
   - Les outils de provisionnement synthétique restent séparés et limités à l'aperçu de `preprod`.
   - Les tests n'écrivent pas en préproduction/production et n'envoient aucun e-mail réel.
 - **Spécification :** `specs/features/real-salon-provisioning.md`.
-- **Mise à jour :** L'écran de gestion permet la création réelle en production et en préproduction ; les outils de données fictives restent réservés à l'aperçu `preprod`. Le scénario `ADM-25` couvre le parcours manuel en préproduction. La revue `quality/review_report/review_2026-10-26_1044.md` ne relève aucun finding confirmé. Aucune donnée de préproduction ou production n'a été créée et aucun e-mail n'a été envoyé.
+- **Mise à jour :** L'écran de gestion permet la création réelle en production et en préproduction ; les outils de données fictives restent réservés à l'aperçu `preprod`. La recette `ADM-25` a réussi en préproduction : création du salon et du premier ADMIN, portail désactivé à la création, activation et connexion valides, lien à usage unique, rejet du slug dupliqué sans seconde invitation. Le portail a ensuite été configuré et activé pour une réservation client de recette ; la confirmation et l'invitation calendrier ont été reçues, puis le rendez-vous a été supprimé. La revue `quality/review_report/review_2026-10-26_1044.md` ne relève aucun finding confirmé. Aucun test ni envoi d'e-mail n'a été effectué en production.
 
 #### Rendre visibles les actions de la page « Salons de test »
 

@@ -533,7 +533,7 @@ l'envoi et les accès ; l'e-mail et l'isolation réelle entre deux salons resten
 **Résultat / preuve :** À vérifier en bêta après publication. Aucun compte réel
 ni e-mail n'a été créé pendant le développement.
 
-#### [ ] ADM-25 — Créer un salon et inviter son premier administrateur
+#### [x] ADM-25 — Créer un salon et inviter son premier administrateur
 **Priorité : P1 · Exigence :** [Req: formal — `real-salon-provisioning.md`]
 
 **Étapes :** en préproduction uniquement, ouvrez « Gestion des salons » avec
@@ -558,10 +558,16 @@ en production.
 `test/ui/CreateOrganizationCard.spec.tsx`,
 `test/domain/test-feedback/scenarios.spec.ts` et
 `test/domain/test-feedback/scenarioLinks.spec.ts`. Les tests simulent la base
-et l'e-mail ; le lien réel, la connexion et la configuration du portail restent
-à vérifier en bêta avec la boîte autorisée.
-**Résultat / preuve :** À vérifier après publication. Aucun salon de préproduction
-ni e-mail réel n'a été créé pendant le développement.
+et l'e-mail ; ils ne remplacent pas la recette manuelle.
+**Résultat / preuve :** PASS — 26/10/2026 en préproduction. Le salon
+`Salon recette réel — octobre 2026` (`qa-salon-reel-20261026-1054-c8f24a`) et
+son premier ADMIN ont été créés ; le portail est resté désactivé. L'e-mail
+d'activation a été reçu, le mot de passe défini et la connexion réussie. Une
+seconde soumission du même lien a été refusée (`Invalid or expired token`).
+Une nouvelle création avec le même slug a été refusée ; aucun second salon ni
+e-mail n'a été créé. Aucun test n'a été effectué en production.
+Après cette vérification, le portail a été configuré et activé séparément pour
+la recette client ; voir CUS-01, CUS-02, CUS-05, CUS-06, CUS-08 et CUS-10.
 
 ## Couverture automatisée relue
 
