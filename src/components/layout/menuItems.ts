@@ -28,7 +28,7 @@ export const menuItems: MenuItem[] = [
     { name: 'Statistiques', icon: BarChart2, href: '/dashboard', adminOnly: true },
     { name: 'Réglages', icon: Settings, href: '/settings', adminOnly: true },
     { name: 'Campagnes de test', icon: ClipboardCheck, href: '/test-campaigns', adminOnly: false, techAdminOnly: true },
-    { name: 'Salons de test', icon: Building2, href: '/test-salons', adminOnly: false, techAdminOnly: true },
+    { name: 'Gestion des salons', icon: Building2, href: '/test-salons', adminOnly: false, techAdminOnly: true },
     { name: 'Domaines des portails', icon: Globe, href: '/tech-admin/portal-domains', adminOnly: false, techAdminOnly: true },
     { name: 'Signalements', icon: Bug, href: '/issue-reports', adminOnly: false, techAdminOnly: true },
 ]

@@ -36,6 +36,7 @@ Préparer dans l'interface staff et avec l'équipe technique :
 | `RATE-LIMIT-STAFF` / `UNKNOWN-EMAIL` | Compte staff de test avec boîte e-mail contrôlée, adresse de test sans compte, et IP dédiée pour vérifier les limites sans affecter les autres testeurs. |
 | `EMAIL-CHANGE-REQUEST` | Fiche client avec rendez-vous de test et boîte contrôlée ; utiliser cette adresse pour la vérification e-mail avant d'envoyer la demande de changement. |
 | `TEST-STAFF-INVITATION` | Avec `TECH-ADMIN`, créer un salon de test sur la preview de `preprod`, choisir le rôle `ADMIN` et une boîte de test contrôlée dont l'équipe autorise explicitement l'envoi. |
+| `REAL-SALON-INVITATION` | Sur la préproduction uniquement, utiliser `TECH-ADMIN`, un slug jamais utilisé et une boîte de test contrôlée dont l'équipe autorise explicitement l'envoi. Ne pas lancer cette recette en production. |
 | Portail `ORG-A` | Activé avec slug et fuseau connus ; préparer aussi `ORG-SOLO` si le test des praticiens mono-staff est nécessaire. |
 | Praticiens et services | Deux praticiens actifs, un inactif, services de 30 et 60 minutes, horaires connus. |
 | Demandes | Plusieurs demandes `PENDING`, une demande déjà rejetée et une demande approuvée. |
@@ -531,6 +532,36 @@ l'envoi et les accès ; l'e-mail et l'isolation réelle entre deux salons resten
 à vérifier en bêta avec des boîtes et comptes de recette autorisés.
 **Résultat / preuve :** À vérifier en bêta après publication. Aucun compte réel
 ni e-mail n'a été créé pendant le développement.
+
+#### [ ] ADM-25 — Créer un salon et inviter son premier administrateur
+**Priorité : P1 · Exigence :** [Req: formal — `real-salon-provisioning.md`]
+
+**Étapes :** en préproduction uniquement, ouvrez « Gestion des salons » avec
+le compte technique autorisé. Saisissez un nom et un slug de test jamais
+utilisés, l'adresse de la boîte contrôlée prévue pour l'administrateur et,
+si souhaité, les coordonnées de contact. Confirmez le contrôle de la boîte et
+autorisez l'envoi. Depuis la boîte, ouvrez le lien reçu, définissez le mot de
+passe et connectez-vous au salon. Vérifiez ensuite que le portail client est
+encore désactivé. Ouvrez une seconde fois le même lien pour vérifier qu'il ne
+fonctionne plus. Revenez au formulaire et essayez une seconde création avec le
+même slug.
+
+**Attendu :** un seul salon réel et un compte ADMIN sans mot de passe initial
+sont créés dans la base de préproduction. Le lien d'activation reçu fonctionne
+une fois et ne peut pas être réutilisé. Le portail reste désactivé jusqu'à sa
+configuration. La seconde création est refusée car le slug existe déjà ; elle
+ne crée pas de salon ni n'envoie une autre invitation. Ne pas exécuter ce cas
+en production.
+
+**Automatisé :** `test/services/organizationProvisioning.service.spec.ts`,
+`test/api/tech-admin-organization-provisioning.spec.ts`,
+`test/ui/CreateOrganizationCard.spec.tsx`,
+`test/domain/test-feedback/scenarios.spec.ts` et
+`test/domain/test-feedback/scenarioLinks.spec.ts`. Les tests simulent la base
+et l'e-mail ; le lien réel, la connexion et la configuration du portail restent
+à vérifier en bêta avec la boîte autorisée.
+**Résultat / preuve :** À vérifier après publication. Aucun salon de préproduction
+ni e-mail réel n'a été créé pendant le développement.
 
 ## Couverture automatisée relue
 
