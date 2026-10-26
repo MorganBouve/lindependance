@@ -63,16 +63,26 @@ describe('proxy middleware', () => {
     expect(res?.headers?.get('location')).toContain('/auth/signin')
   })
 
-  it('blocks test salon pages outside the preprod preview deployment', async () => {
+  it('allows the TECH_ADMIN salon management page in production', async () => {
     vi.stubEnv('VERCEL_ENV', 'production')
-    vi.stubEnv('VERCEL_GIT_COMMIT_REF', 'preprod')
+    vi.stubEnv('VERCEL_GIT_COMMIT_REF', 'main')
+    mockSession = { user: { id: 'tech-1', role: 'TECH_ADMIN' } }
 
     const res = await proxy(createProxyRequest('/test-salons'))
+
+    expect(res).toBeUndefined()
+  })
+
+  it('keeps synthetic salon provisioning blocked outside the preprod preview deployment', async () => {
+    vi.stubEnv('VERCEL_ENV', 'production')
+    vi.stubEnv('VERCEL_GIT_COMMIT_REF', 'main')
+
+    const res = await proxy(createProxyRequest('/api/tech-admin/test-salons'))
 
     expect(res?.status).toBe(404)
   })
 
-  it('allows test salon pages only on the preprod preview deployment', async () => {
+  it('allows the management page on the preprod preview', async () => {
     vi.stubEnv('VERCEL_ENV', 'preview')
     vi.stubEnv('VERCEL_GIT_COMMIT_REF', 'preprod')
     mockSession = { user: { id: 'tech-1', role: 'TECH_ADMIN' } }

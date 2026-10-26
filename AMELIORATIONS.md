@@ -577,6 +577,23 @@ continue de vérifier l'accès à l'e-mail au moment de la connexion grâce au c
   - Le résultat affiche l'organisation créée ; les erreurs de validation ou de création sont explicites.
   - Des tests couvrent l'autorisation, le garde-fou d'environnement, le provisionnement et l'isolation des données.
 
+#### Créer un salon réel et son premier ADMIN depuis TECH_ADMIN
+
+- **Type :** Amélioration
+- **Statut :** Implémentée localement — tests ciblés, lint, type-check et build validés ; vérification bêta avec une boîte contrôlée encore à effectuer.
+- **Priorité proposée :** P1
+- **Constat :** L'écran TECH_ADMIN permet de préparer des données fictives en préproduction, mais ne propose pas de parcours pour créer un vrai salon et son premier compte de connexion. Cette configuration nécessite encore une intervention manuelle dans la base.
+- **Amélioration souhaitée :** Permettre à TECH_ADMIN de créer un salon réel et son premier ADMIN depuis l'écran de gestion, en préproduction comme en production, chaque déploiement écrivant dans sa propre base.
+- **Critères d'acceptation :**
+  - Le nom, le slug unique et l'e-mail du premier ADMIN sont obligatoires ; l'e-mail et le téléphone de contact sont facultatifs.
+  - Le salon et son ADMIN sans mot de passe sont créés atomiquement ; le portail reste désactivé jusqu'à sa configuration.
+  - Le titulaire reçoit un lien d'activation à usage unique après confirmation de contrôle de sa boîte ; l'échec d'envoi est signalé sans supprimer le salon ni le compte.
+  - La création réelle est réservée à TECH_ADMIN ; les champs `organizationId` et `role` ne sont pas acceptés depuis le navigateur.
+  - Les outils de provisionnement synthétique restent séparés et limités à l'aperçu de `preprod`.
+  - Les tests n'écrivent pas en préproduction/production et n'envoient aucun e-mail réel.
+- **Spécification :** `specs/features/real-salon-provisioning.md`.
+- **Mise à jour :** L'écran de gestion permet la création réelle en production et en préproduction ; les outils de données fictives restent réservés à l'aperçu `preprod`. Le scénario `ADM-25` couvre le parcours manuel en préproduction. La revue `quality/review_report/review_2026-10-26_1044.md` ne relève aucun finding confirmé. Aucune donnée de préproduction ou production n'a été créée et aucun e-mail n'a été envoyé.
+
 #### Rendre visibles les actions de la page « Salons de test »
 
 - **Type :** Bug

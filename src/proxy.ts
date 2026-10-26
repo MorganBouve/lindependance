@@ -8,8 +8,6 @@ import { canProvisionTestSalon } from '@/domain/tech-admin/testSalonProvisioning
 function isPreprodOnlyPath(pathname: string): boolean {
   return pathname === '/test-campaigns'
     || pathname.startsWith('/test-campaigns/')
-    || pathname === '/test-salons'
-    || pathname.startsWith('/test-salons/')
     || pathname === '/retour-test'
     || pathname.startsWith('/retour-test/')
 }

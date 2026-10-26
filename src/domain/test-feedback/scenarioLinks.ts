@@ -30,6 +30,9 @@ export function getTestScenarioLinks(
     if (number === 24) {
       return [{ href: '/settings/accounts', label: 'Gérer les comptes du salon' }]
     }
+    if (number === 25) {
+      return [{ href: '/test-salons', label: 'Gérer les salons' }]
+    }
     if ((number >= 7 && number <= 10) || number === 20) {
       return [{ href: '/agenda', label: 'Ouvrir l’agenda staff' }]
     }

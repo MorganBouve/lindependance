@@ -11,6 +11,48 @@ export const CreateInitialOrganizationAdminSchema = z.object({
   confirmControlledEmail: z.literal(true),
 }).strict()
 
+const optionalContactEmailSchema = z.union([
+  z.literal(''),
+  z.string().trim().toLowerCase().email().max(254),
+]).optional().transform((value) => value || undefined)
+
+const optionalContactPhoneSchema = z.union([
+  z.literal(''),
+  z.string().trim().max(40),
+]).optional().transform((value) => value || undefined)
+
+export const CreateOrganizationSchema = z.object({
+  name: z.string().trim().min(1).max(120),
+  slug: z.string().trim().toLowerCase().min(1).max(63)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  firstAdminEmail: z.string().trim().toLowerCase().email().max(254),
+  portalContactEmail: optionalContactEmailSchema,
+  portalContactPhone: optionalContactPhoneSchema,
+  confirmControlledEmail: z.literal(true),
+}).strict()
+
+export type CreateOrganizationInput = z.infer<typeof CreateOrganizationSchema>
+
+export const CreateOrganizationResponseSchema = z.object({
+  organization: z.object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+    slug: z.string().min(1),
+    portalEnabled: z.literal(false),
+    portalContactEmail: z.string().email().nullable(),
+    portalContactPhone: z.string().nullable(),
+  }).strict(),
+  account: z.object({
+    id: z.string().min(1),
+    email: z.string().email(),
+    role: z.literal('ADMIN'),
+  }).strict(),
+  invitation: z.object({
+    sent: z.boolean(),
+    error: z.string().nullable(),
+  }).strict(),
+}).strict()
+
 export const InitialOrganizationAdminResponseSchema = z.object({
   organization: z.object({
     id: z.string().min(1),
