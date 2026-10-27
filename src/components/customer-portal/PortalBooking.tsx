@@ -58,16 +58,24 @@ export default function PortalBooking({
     [organizationSlug],
   )
 
-  const loadCustomers = useCallback(async () => {
+  const fetchCustomers = useCallback(async (): Promise<Customer[] | null> => {
     const response = await fetch(`${basePath}/customers`, { credentials: 'include' })
-    if (response.status === 401) return false
+    if (response.status === 401) return null
     if (!response.ok) throw new Error(await readError(response, 'Impossible de vérifier votre session client.'))
     const result: Customer[] = await response.json()
-    setCustomers(result)
-    setCustomerId(result.length === 1 ? result[0].id : '')
-    setAuthenticated(result.length > 0)
-    return result.length > 0
+    return result
   }, [basePath])
+
+  const resetSlotSelection = useCallback((loading: boolean) => {
+    setSlots([])
+    setSelectedSlot('')
+    setLoadingSlots(loading)
+    setError('')
+  }, [])
+
+  const canLoadSlots = Boolean(
+    serviceId && practitioners.length > 0 && (practitioners.length === 1 || staffId),
+  )
 
   useEffect(() => {
     let active = true
@@ -82,10 +90,16 @@ export default function PortalBooking({
       }),
     ]).then(([loadedServices, loadedPractitioners]) => {
       if (!active) return
+      const initialServiceId = loadedServices[0]?.id ?? ''
+      const initialStaffId = loadedPractitioners.length === 1 ? loadedPractitioners[0].id : ''
+      setSlots([])
+      setSelectedSlot('')
+      setLoadingSlots(Boolean(initialServiceId && loadedPractitioners.length > 0 && (loadedPractitioners.length === 1 || initialStaffId)))
+      setError('')
       setServices(loadedServices)
       setPractitioners(loadedPractitioners)
-      setServiceId(loadedServices[0]?.id ?? '')
-      setStaffId(loadedPractitioners.length === 1 ? loadedPractitioners[0].id : '')
+      setServiceId(initialServiceId)
+      setStaffId(initialStaffId)
     }).catch((loadError: unknown) => {
       if (active) setError(loadError instanceof Error ? loadError.message : 'Impossible de charger le portail.')
     }).finally(() => {
@@ -96,26 +110,27 @@ export default function PortalBooking({
 
   useEffect(() => {
     let active = true
-    void loadCustomers().catch((sessionError: unknown) => {
-      if (active) {
-        setAuthenticated(false)
-        setError(sessionError instanceof Error ? sessionError.message : 'Impossible de vérifier la session client.')
-      }
-    })
+    void fetchCustomers()
+      .then((result) => {
+        if (!active || result === null) return
+        setCustomers(result)
+        setCustomerId(result.length === 1 ? result[0].id : '')
+        setAuthenticated(result.length > 0)
+      })
+      .catch((sessionError: unknown) => {
+        if (active) {
+          setAuthenticated(false)
+          setError(sessionError instanceof Error ? sessionError.message : 'Impossible de vérifier la session client.')
+        }
+      })
     return () => { active = false }
-  }, [loadCustomers])
+  }, [fetchCustomers])
 
   useEffect(() => {
-    if (!serviceId || practitioners.length === 0 || (practitioners.length > 1 && !staffId)) {
-      setSlots([])
-      setSelectedSlot('')
-      return
-    }
+    if (!canLoadSlots) return
     const controller = new AbortController()
     const query = new URLSearchParams({ serviceId, date })
     if (staffId) query.set('staffId', staffId)
-    setLoadingSlots(true)
-    setError('')
     void fetch(`${basePath}/creneaux?${query.toString()}`, { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error(await readError(response, 'Impossible de charger les créneaux.'))
@@ -136,7 +151,7 @@ export default function PortalBooking({
         if (!controller.signal.aborted) setLoadingSlots(false)
       })
     return () => controller.abort()
-  }, [basePath, date, practitioners.length, serviceId, staffId])
+  }, [basePath, canLoadSlots, date, serviceId, staffId])
 
   async function requestCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -165,9 +180,14 @@ export default function PortalBooking({
         body: JSON.stringify({ organizationSlug, email, code }),
       })
       if (!response.ok) throw new Error(await readError(response, 'Code invalide ou expiré.'))
-      const hasCustomers = await loadCustomers()
+      const loadedCustomers = await fetchCustomers()
+      if (loadedCustomers !== null) {
+        setCustomers(loadedCustomers)
+        setCustomerId(loadedCustomers.length === 1 ? loadedCustomers[0].id : '')
+      }
+      const hasCustomers = Boolean(loadedCustomers?.length)
+      setAuthenticated(hasCustomers)
       if (!hasCustomers) {
-        setAuthenticated(false)
         setError('Impossible de vérifier votre code. Réessayez ou contactez le salon.')
       }
     } catch (verificationError: unknown) {
@@ -176,7 +196,7 @@ export default function PortalBooking({
   }
 
   async function bookAppointment() {
-    if (!customerId || !serviceId || !selectedSlot) return
+    if (!canLoadSlots || !customerId || !serviceId || !selectedSlot) return
     setSubmitting(true)
     setError('')
     try {
@@ -204,6 +224,7 @@ export default function PortalBooking({
   if (loading) return <main className="mx-auto max-w-3xl p-6 text-gray-500">Chargement du portail…</main>
 
   const service = services.find((item) => item.id === serviceId)
+  const visibleSlots = canLoadSlots ? slots : []
   const bookingWindow = getPortalBookingWindow(new Date(), organizationTimezone)
   const formatTime = (instant: string) => new Intl.DateTimeFormat('fr-FR', {
     timeZone: timezone,
@@ -239,7 +260,17 @@ export default function PortalBooking({
             <h2 className="text-lg font-semibold">1. Choisissez votre prestation</h2>
             <label className="block text-sm font-medium">
               Prestation
-              <select value={serviceId} onChange={(event) => setServiceId(event.target.value)} className="mt-1 block w-full rounded-lg border border-gray-300 p-3">
+              <select
+                value={serviceId}
+                onChange={(event) => {
+                  const nextServiceId = event.target.value
+                  resetSlotSelection(Boolean(
+                    nextServiceId && practitioners.length > 0 && (practitioners.length === 1 || staffId),
+                  ))
+                  setServiceId(nextServiceId)
+                }}
+                className="mt-1 block w-full rounded-lg border border-gray-300 p-3"
+              >
                 {services.map((item) => (
                   <option key={item.id} value={item.id}>{item.name} — {item.durationMinutes} min — {item.price} €</option>
                 ))}
@@ -248,7 +279,17 @@ export default function PortalBooking({
             {practitioners.length > 1 && (
               <label className="block text-sm font-medium">
                 Personne de l’équipe
-                <select value={staffId} onChange={(event) => setStaffId(event.target.value)} className="mt-1 block w-full rounded-lg border border-gray-300 p-3">
+                <select
+                  value={staffId}
+                  onChange={(event) => {
+                    const nextStaffId = event.target.value
+                    resetSlotSelection(Boolean(
+                      serviceId && practitioners.length > 0 && (practitioners.length === 1 || nextStaffId),
+                    ))
+                    setStaffId(nextStaffId)
+                  }}
+                  className="mt-1 block w-full rounded-lg border border-gray-300 p-3"
+                >
                   <option value="">Choisir une personne</option>
                   {practitioners.map((person) => <option key={person.id} value={person.id}>{person.firstName} {person.lastName}</option>)}
                 </select>
@@ -261,7 +302,10 @@ export default function PortalBooking({
                 min={bookingWindow.minDate}
                 max={bookingWindow.maxDate}
                 value={date}
-                onChange={(event) => setDate(event.target.value)}
+                onChange={(event) => {
+                  resetSlotSelection(canLoadSlots)
+                  setDate(event.target.value)
+                }}
                 className="mt-1 block w-full rounded-lg border border-gray-300 p-3"
               />
             </label>
@@ -343,7 +387,7 @@ export default function PortalBooking({
             <h2 className="text-lg font-semibold">3. Choisissez un créneau</h2>
             {loadingSlots ? <p className="text-sm text-gray-500">Recherche des disponibilités…</p> : (
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {slots.map((slot) => (
+                {visibleSlots.map((slot) => (
                   <button
                     type="button"
                     key={slot.start}
@@ -354,7 +398,7 @@ export default function PortalBooking({
                     {formatTime(slot.start)}
                   </button>
                 ))}
-                {slots.length === 0 && <p className="col-span-full text-sm text-gray-500">Aucun créneau disponible pour cette date.</p>}
+                {visibleSlots.length === 0 && <p className="col-span-full text-sm text-gray-500">Aucun créneau disponible pour cette date.</p>}
               </div>
             )}
           </section>
@@ -363,7 +407,7 @@ export default function PortalBooking({
           <button
             type="button"
             onClick={bookAppointment}
-            disabled={!authenticated || !customerId || !service || !selectedSlot || submitting}
+            disabled={!authenticated || !customerId || !service || !canLoadSlots || !selectedSlot || submitting}
             className="w-full rounded-xl bg-gray-900 px-6 py-4 font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             {submitting ? 'Réservation en cours…' : 'Confirmer le rendez-vous'}

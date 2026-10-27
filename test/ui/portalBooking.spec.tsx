@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import PortalBooking from '@/components/customer-portal/PortalBooking'
 import { DEFAULT_ORGANIZATION_BRANDING } from '@/domain/branding/logoSettings'
 import { getPortalBookingWindow } from '@/domain/customer-portal/scheduling'
@@ -68,6 +68,45 @@ describe('PortalBooking', () => {
     expect(await screen.findByText('Salon Élise')).toBeInTheDocument()
     expect(await screen.findByRole('link', { name: 'Accès équipe' })).toHaveAttribute('href', '/auth/signin')
     expect(screen.getByText('Pour un premier rendez-vous, contactez le salon avant de réserver.')).toBeInTheDocument()
+  })
+
+  it('restores the verified customer session after a successful code check', async () => {
+    let customerFetchCount = 0
+    vi.mocked(fetch).mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.endsWith('/services')) return Promise.resolve(response([]))
+      if (url.endsWith('/praticiens')) return Promise.resolve(response([]))
+      if (url.endsWith('/customers')) {
+        customerFetchCount += 1
+        return Promise.resolve(customerFetchCount === 1
+          ? response({ error: 'Unauthorized' }, 401)
+          : response([{ id: 'customer-1', firstName: 'Client', lastName: 'Recette' }]))
+      }
+      return Promise.resolve(response({ timezone: 'Europe/Paris', slots: [] }))
+    })
+
+    render(
+      <PortalBooking
+        organizationSlug="osezletre"
+        organizationTimezone="Europe/Paris"
+        organizationName="Salon Élise"
+        branding={DEFAULT_ORGANIZATION_BRANDING}
+        portalContactPhone="01 23 45 67 89"
+        portalContactEmail={null}
+      />,
+    )
+
+    const emailInput = await screen.findByLabelText('Email enregistré sur votre fiche client')
+    fireEvent.change(emailInput, { target: { value: 'client@example.test' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Recevoir un code' }))
+    expect(await screen.findByText(/Si cet email correspond à une fiche client/)).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Code de vérification'), { target: { value: '123456' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Vérifier le code' }))
+
+    expect(await screen.findByText('Adresse email vérifiée')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Email enregistré sur votre fiche client')).not.toBeInTheDocument()
+    expect(screen.queryByText(/premier rendez-vous/)).not.toBeInTheDocument()
   })
 
   it('tells first-time visitors to call the salon when a phone number is available', async () => {
