@@ -1,6 +1,6 @@
 // @ts-check
 /** @type {import('@playwright/test').PlaywrightTestConfig} */
-const baseURL = process.env.BASE_URL ?? 'http://127.0.0.1:3000'
+const baseURL = process.env.BASE_URL ?? 'http://localhost:3000'
 const nextAuthSecret = process.env.NEXTAUTH_SECRET
   ?? process.env.AUTH_SECRET
   ?? globalThis.crypto.randomUUID()

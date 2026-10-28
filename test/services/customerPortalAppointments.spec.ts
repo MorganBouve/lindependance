@@ -33,6 +33,10 @@ function transactionFixture(appointment: {
   startTime: Date
   status: string
   finalPrice?: number | null
+  endTime?: Date
+  createdAt?: Date
+  calendarSequence?: number
+  service?: { name: string }
 } | null = {
   id: 'appointment-1',
   customerId: 'customer-1',
@@ -41,11 +45,27 @@ function transactionFixture(appointment: {
   status: 'CONFIRMED',
   finalPrice: null,
 }) {
+  const appointmentDetails = appointment
+    ? {
+      endTime: new Date('2026-10-03T11:00:00.000Z'),
+      createdAt: new Date('2026-09-30T12:00:00.000Z'),
+      calendarSequence: 0,
+      service: { name: 'Coupe' },
+      ...appointment,
+    }
+    : null
   return {
-    organization: { findFirst: vi.fn().mockResolvedValue({ id: organizationA.id }) },
+    organization: {
+      findFirst: vi.fn().mockResolvedValue({
+        id: organizationA.id,
+        name: 'Atelier',
+        slug: organizationA.slug,
+        timezone: 'Europe/Paris',
+      }),
+    },
     appointmentChangeRequest: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
     appointment: {
-      findFirst: vi.fn().mockResolvedValue(appointment),
+      findFirst: vi.fn().mockResolvedValue(appointmentDetails),
       updateMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
     customerPackage: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
@@ -183,7 +203,7 @@ describe('cancelCustomerPortalAppointment', () => {
     const transaction = transactionFixture()
     vi.mocked(prisma.$transaction).mockImplementation(async (callback) => callback(transaction as never))
 
-    await cancelCustomerPortalAppointment({
+    const cancellation = await cancelCustomerPortalAppointment({
       ...identity,
       appointmentId: 'appointment-1',
       now,
@@ -198,6 +218,7 @@ describe('cancelCustomerPortalAppointment', () => {
         id: 'appointment-1',
         organizationId: organizationA.id,
         status: { not: 'CANCELLED' },
+        service: { is: { organizationId: organizationA.id } },
         customer: { is: { organizationId: organizationA.id, email: identity.verifiedEmail } },
       },
     }))
@@ -222,6 +243,23 @@ describe('cancelCustomerPortalAppointment', () => {
       },
       data: { sessionsRemaining: { increment: 1 } },
     }))
+    expect(cancellation).toEqual({
+      organizationId: organizationA.id,
+      recipientEmail: identity.verifiedEmail,
+      cancelledBy: 'CUSTOMER',
+      cancelledAt: now,
+      appointment: {
+        id: 'appointment-1',
+        startTime: new Date('2026-10-03T10:00:00.000Z'),
+        endTime: new Date('2026-10-03T11:00:00.000Z'),
+        createdAt: new Date('2026-09-30T12:00:00.000Z'),
+        calendarSequence: 0,
+        serviceName: 'Coupe',
+        organizationName: 'Atelier',
+        timezone: 'Europe/Paris',
+        organizationSlug: organizationA.slug,
+      },
+    })
     expect(transaction.appointmentChangeRequest.updateMany).toHaveBeenCalledWith(expect.objectContaining({
       where: {
         appointmentId: 'appointment-1',

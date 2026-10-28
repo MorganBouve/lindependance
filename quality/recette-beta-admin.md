@@ -193,15 +193,23 @@ et `test/services/appointmentScheduling.service.spec.ts`.
 #### [ ] ADM-08 — Supprimer un rendez-vous avec une demande en attente
 **Priorité : P0 · Exigence :** [Req: user-confirmed — choix de conserver le DELETE physique et l'historique de demande]
 
-**Étapes :** dans les données de test, supprimez un rendez-vous qui a une
-demande de changement en attente. Vérifiez ensuite la liste des demandes.
+**Étapes :** dans les données de test, supprimez un rendez-vous futur qui a une
+demande de changement en attente et dont la fiche client contient une adresse
+de recette autorisée. Vérifiez ensuite la liste des demandes, l'e-mail reçu et
+la pièce jointe calendrier dans l'agenda de test.
 
 **Attendu :** le rendez-vous est supprimé et sa demande ne figure plus parmi
-les demandes en attente. Elle ne peut pas être acceptée ensuite.
+les demandes en attente. Elle ne peut pas être acceptée ensuite. Le client
+reçoit un e-mail d'annulation et la pièce jointe retire le même rendez-vous
+calendrier. Si l'adresse manque ou que l'envoi échoue, la suppression reste
+effective et un avertissement est affiché au salon.
 
-**Automatisé :** `test/services/appointmentSchedulingChangeRequests.spec.ts`.
-La conservation après suppression physique doit être validée par l'équipe
-technique sur la base bêta.
+**Automatisé :** `test/services/appointmentSchedulingChangeRequests.spec.ts`,
+`test/services/appointmentScheduling.service.spec.ts`,
+`test/services/appointmentCancellationNotification.spec.ts`,
+`test/api/appointments.route.spec.ts` et
+`test/services/customerPortalEmail.spec.ts`. La réception réelle et le retrait
+calendrier restent à valider en préproduction après publication.
 **Résultat / preuve :** `________`
 
 #### [ ] ADM-09 — Vérifier l'annulation d'un rendez-vous avec une demande

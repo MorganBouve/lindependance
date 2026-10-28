@@ -7,6 +7,7 @@ import { Toaster } from 'sonner'
 import "./globals.css";
 import QuickAppointmentModal from '@/components/appointments/QuickAppointmentModal'
 import { ModalStackProvider } from '@/components/ui/ModalStackProvider'
+import ButtonPressFeedback from '@/components/ui/ButtonPressFeedback'
 import IssueReportLauncher from '@/components/issue-reports/IssueReportLauncher'
 
 const notoSerif = Noto_Serif({ variable: "--font-noto-serif", subsets: ["latin"] });
@@ -31,6 +32,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <body className="flex h-full w-full m-0 p-0 bg-studio-bg">
             <ModalStackProvider>
               <AuthProvider>
+                <ButtonPressFeedback />
                 <MobileHeader />
                 <Sidebar />
                 <main className="flex-1 overflow-y-auto min-w-0 relative pt-16 md:pt-0">

@@ -34,6 +34,15 @@ associées à son email vérifié et d'annuler en ligne les rendez-vous admissib
 - Pour un rendez-vous lié à un `CustomerPackage`, recréditer
   `sessionsRemaining` atomiquement uniquement lorsque l'annulation est
   autorisée.
+- Après l'annulation en ligne d'un rendez-vous futur, envoyer après commit un
+  e-mail à l'adresse vérifiée du client. L'e-mail joint une annulation
+  calendrier avec le même UID et un `SEQUENCE` supérieur.
+- Après la suppression par le salon d'un rendez-vous futur, prévenir le client
+  à l'adresse enregistrée sur sa fiche, lorsqu'elle existe. Si l'e-mail échoue
+  ou qu'aucune adresse n'est disponible, la suppression reste effective et le
+  salon reçoit un avertissement.
+- Ne pas envoyer de notification pour une annulation refusée ou la suppression
+  d'un rendez-vous passé.
 
 ## Hors scope
 - Modifier le créneau directement ou soumettre une demande de changement
@@ -58,3 +67,7 @@ associées à son email vérifié et d'annuler en ligne les rendez-vous admissib
    d'A sous le portail de l'organisation B, y compris après navigation et
    rechargement ; le client doit s'identifier auprès de B pour consulter ses
    rendez-vous.
+7. Une annulation client réussie ou une suppression staff d'un rendez-vous
+   futur envoie un e-mail au client lorsque son adresse est disponible. La
+   pièce jointe annule le même événement calendrier ; un échec d'envoi ne
+   rétablit pas le rendez-vous et est signalé sans message de succès trompeur.

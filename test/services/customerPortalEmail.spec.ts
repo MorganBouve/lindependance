@@ -16,6 +16,7 @@ import {
   sendCustomerPortalSavedEmail,
   sendCustomerPortalDisabledEmail,
   sendAppointmentConfirmation,
+  sendAppointmentCancellationEmail,
   sendAppointmentChangeDecisionEmail,
 } from '@/services/customerPortalEmail.service'
 
@@ -50,7 +51,47 @@ describe('createAppointmentIcs', () => {
     expect(first).toContain('DTEND:20261001T090000Z')
     expect(first).toContain('X-WR-TIMEZONE:Europe/Paris')
     expect(first).toContain('SUMMARY:Coupe\\; soin\\, finition')
+    expect(first).toContain('METHOD:REQUEST')
+    expect(first).toContain('SEQUENCE:0')
     expect(first).not.toContain('customerId')
+  })
+
+  it('escapes every newline form in calendar text properties', () => {
+    const calendar = createAppointmentIcs({
+      id: 'appointment-123',
+      startTime: new Date('2026-10-01T08:00:00.000Z'),
+      endTime: new Date('2026-10-01T09:00:00.000Z'),
+      createdAt: new Date('2026-09-30T12:00:00.000Z'),
+      serviceName: 'Coupe\r\nColoration\rSoin\n',
+      organizationName: 'Atelier',
+      timezone: 'Europe/Paris',
+      portalUrl: 'https://example.test/portail/atelier/reserver',
+    })
+
+    const summaryLine = calendar.split('\r\n').find((line) => line.startsWith('SUMMARY:'))
+    expect(summaryLine).toBe('SUMMARY:Coupe\\nColoration\\nSoin\\n')
+  })
+
+  it('creates a cancellation event for the same appointment with an incremented sequence', () => {
+    const cancellation = createAppointmentIcs({
+      id: 'appointment-123',
+      startTime: new Date('2026-10-01T08:00:00.000Z'),
+      endTime: new Date('2026-10-01T09:00:00.000Z'),
+      createdAt: new Date('2026-09-30T12:00:00.000Z'),
+      lastModified: new Date('2026-10-01T07:00:00.000Z'),
+      sequence: 3,
+      calendarMethod: 'CANCEL',
+      serviceName: 'Coupe',
+      organizationName: 'Atelier',
+      timezone: 'Europe/Paris',
+      portalUrl: 'https://example.test/portail/atelier/mes-rdv',
+    })
+
+    expect(cancellation).toContain('METHOD:CANCEL')
+    expect(cancellation).toContain('UID:appointment-123@customer-portal')
+    expect(cancellation).toContain('SEQUENCE:3')
+    expect(cancellation).toContain('STATUS:CANCELLED')
+    expect(cancellation).toContain('DTSTAMP:20261001T070000Z')
   })
 
   describe('sendCustomerPortalOtpEmail', () => {
@@ -119,6 +160,68 @@ describe('createAppointmentIcs', () => {
       expect(resendSendMock).toHaveBeenCalledWith(expect.objectContaining({
         html: expect.not.stringContaining('<Coupe>'),
       }))
+    })
+  })
+
+  describe('sendAppointmentCancellationEmail', () => {
+    it('sends an escaped cancellation notice with a calendar cancellation', async () => {
+      await sendAppointmentCancellationEmail({
+        to: 'client@example.test',
+        cancelledBy: 'SALON',
+        portalUrl: 'https://example.test/portail/atelier/mes-rdv',
+        appointment: {
+          id: 'appointment-123',
+          startTime: new Date('2026-10-01T08:00:00.000Z'),
+          endTime: new Date('2026-10-01T09:00:00.000Z'),
+          createdAt: new Date('2026-09-30T12:00:00.000Z'),
+          lastModified: new Date('2026-10-01T07:00:00.000Z'),
+          sequence: 2,
+          calendarMethod: 'CANCEL',
+          serviceName: '<Coupe>',
+          organizationName: '<Atelier>',
+          timezone: 'Europe/Paris',
+          portalUrl: 'https://example.test/portail/atelier/mes-rdv',
+        },
+      })
+
+      const sentEmail = vi.mocked(resendSendMock).mock.lastCall?.[0]
+      expect(sentEmail).toMatchObject({
+        to: 'client@example.test',
+        subject: 'Annulation de votre rendez-vous chez <Atelier>',
+        attachments: [expect.objectContaining({ filename: 'annulation-rendez-vous.ics' })],
+      })
+      expect(sentEmail.html).toContain('Le salon a annulé votre rendez-vous.')
+      expect(sentEmail.html).toContain('&lt;Coupe&gt;')
+      expect(sentEmail.html).toContain('href="https://example.test/portail/atelier/mes-rdv"')
+      expect(sentEmail.html).not.toContain('<Coupe>')
+      expect(sentEmail.attachments[0].content.toString()).toContain('METHOD:CANCEL')
+      expect(sentEmail.attachments[0].content.toString()).toContain('SEQUENCE:2')
+      expect(sentEmail.attachments[0].content.toString()).toContain('STATUS:CANCELLED')
+    })
+
+    it('identifies cancellations requested by the customer', async () => {
+      await sendAppointmentCancellationEmail({
+        to: 'client@example.test',
+        cancelledBy: 'CUSTOMER',
+        portalUrl: null,
+        appointment: {
+          id: 'appointment-123',
+          startTime: new Date('2026-10-01T08:00:00.000Z'),
+          endTime: new Date('2026-10-01T09:00:00.000Z'),
+          createdAt: new Date('2026-09-30T12:00:00.000Z'),
+          lastModified: new Date('2026-10-01T07:00:00.000Z'),
+          sequence: 1,
+          calendarMethod: 'CANCEL',
+          serviceName: 'Coupe',
+          organizationName: 'Atelier',
+          timezone: 'Europe/Paris',
+          portalUrl: 'https://example.test',
+        },
+      })
+
+      const sentEmail = vi.mocked(resendSendMock).mock.lastCall?.[0]
+      expect(sentEmail.html).toContain('Votre rendez-vous a bien été annulé à votre demande.')
+      expect(sentEmail.html).not.toContain('Consulter mes rendez-vous')
     })
   })
 

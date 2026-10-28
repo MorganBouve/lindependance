@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import PortalAppointments from '@/components/customer-portal/PortalAppointments'
 import { getPortalBookingWindow } from '@/domain/customer-portal/scheduling'
 
@@ -71,7 +71,7 @@ describe('PortalAppointments', () => {
   it('removes the appointment after a successful cancellation', async () => {
     const fetchMock = vi.mocked(fetch)
     fetchMock.mockResolvedValueOnce(response(appointments))
-    fetchMock.mockResolvedValueOnce(response({ ok: true }))
+    fetchMock.mockResolvedValueOnce(response({ ok: true, notificationSent: true }))
 
     render(<PortalAppointments organizationSlug="atelier" organizationTimezone="Europe/Paris" />)
     fireEvent.click(await screen.findByRole('button', { name: 'Annuler' }))
@@ -85,6 +85,38 @@ describe('PortalAppointments', () => {
     await waitFor(() => {
       expect(screen.queryByText('Camille Martin')).not.toBeInTheDocument()
     })
+  })
+
+  it('removes the appointment and shows a warning when cancellation email fails', async () => {
+    const fetchMock = vi.mocked(fetch)
+    fetchMock.mockResolvedValueOnce(response(appointments))
+    fetchMock.mockResolvedValueOnce(response({
+      ok: true,
+      notificationSent: false,
+      notificationWarning: 'Le rendez-vous a été annulé, mais l’e-mail n’a pas pu être envoyé.',
+    }))
+
+    render(<PortalAppointments organizationSlug="atelier" organizationTimezone="Europe/Paris" />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Annuler' }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Le rendez-vous a été annulé, mais l’e-mail n’a pas pu être envoyé.',
+    )
+    expect(screen.queryByText('Camille Martin')).not.toBeInTheDocument()
+  })
+
+  it('removes the appointment and warns when the email status cannot be confirmed', async () => {
+    const fetchMock = vi.mocked(fetch)
+    fetchMock.mockResolvedValueOnce(response(appointments))
+    fetchMock.mockResolvedValueOnce(response({ ok: true }))
+
+    render(<PortalAppointments organizationSlug="atelier" organizationTimezone="Europe/Paris" />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Annuler' }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Le rendez-vous a été annulé, mais l’envoi de l’e-mail n’a pas pu être confirmé.',
+    )
+    expect(screen.queryByText('Camille Martin')).not.toBeInTheDocument()
   })
 
   it('prompts unauthenticated visitors to verify their email before viewing appointments', async () => {
@@ -102,7 +134,6 @@ describe('PortalAppointments', () => {
 
     const renderPortal = (organizationSlug: string) => (
       <PortalAppointments
-        key={organizationSlug}
         organizationSlug={organizationSlug}
         organizationTimezone="Europe/Paris"
       />
@@ -180,5 +211,77 @@ describe('PortalAppointments', () => {
       )
     })
     expect(await screen.findByText('En attente de validation')).toBeInTheDocument()
+  })
+
+  it('disables submission while availability for a newly selected date is loading', async () => {
+    const fetchMock = vi.mocked(fetch)
+    fetchMock.mockResolvedValueOnce(response(appointments))
+    fetchMock.mockResolvedValueOnce(response({
+      timezone: 'Europe/Paris',
+      slots: [{
+        start: requestedSlotStart.toISOString(),
+        end: new Date(requestedSlotStart.getTime() + 60 * 60 * 1000).toISOString(),
+      }],
+    }))
+    fetchMock.mockReturnValueOnce(new Promise<Response>(() => {}))
+
+    render(<PortalAppointments organizationSlug="atelier" organizationTimezone="Europe/Paris" />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Demander un changement' }))
+    fireEvent.click(await screen.findByRole('button', { name: requestedSlotLabel }))
+
+    const dateInput = screen.getByLabelText<HTMLInputElement>('Nouvelle date souhaitée')
+    const [year, month, day] = dateInput.value.split('-').map(Number)
+    const nextDate = new Date(Date.UTC(year, month - 1, day + 1)).toISOString().slice(0, 10)
+    fireEvent.change(dateInput, { target: { value: nextDate } })
+
+    expect(await screen.findByText('Recherche des créneaux…')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Envoyer la demande' })).toBeDisabled()
+  })
+
+  it('ignores a stale availability response after the customer changes dates', async () => {
+    const fetchMock = vi.mocked(fetch)
+    let resolvePreviousSlots: (value: Response) => void = () => {}
+    const previousSlotsResponse = new Promise<Response>((resolve) => {
+      resolvePreviousSlots = resolve
+    })
+    const nextSlotStart = new Date(requestedSlotStart.getTime() + 2 * 60 * 60 * 1000)
+    const nextSlotLabel = new Intl.DateTimeFormat('fr-FR', {
+      timeZone: 'Europe/Paris',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(nextSlotStart)
+    fetchMock.mockResolvedValueOnce(response(appointments))
+    fetchMock.mockReturnValueOnce(previousSlotsResponse)
+    fetchMock.mockResolvedValueOnce(response({
+      timezone: 'Europe/Paris',
+      slots: [{
+        start: nextSlotStart.toISOString(),
+        end: new Date(nextSlotStart.getTime() + 60 * 60 * 1000).toISOString(),
+      }],
+    }))
+
+    render(<PortalAppointments organizationSlug="atelier" organizationTimezone="Europe/Paris" />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Demander un changement' }))
+    expect(await screen.findByText('Recherche des créneaux…')).toBeInTheDocument()
+
+    const dateInput = screen.getByLabelText<HTMLInputElement>('Nouvelle date souhaitée')
+    const [year, month, day] = dateInput.value.split('-').map(Number)
+    const nextDate = new Date(Date.UTC(year, month - 1, day + 1)).toISOString().slice(0, 10)
+    fireEvent.change(dateInput, { target: { value: nextDate } })
+
+    expect(await screen.findByRole('button', { name: nextSlotLabel })).toBeInTheDocument()
+    await act(async () => {
+      resolvePreviousSlots(response({
+        timezone: 'Europe/Paris',
+        slots: [{
+          start: requestedSlotStart.toISOString(),
+          end: new Date(requestedSlotStart.getTime() + 60 * 60 * 1000).toISOString(),
+        }],
+      }))
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(screen.getByRole('button', { name: nextSlotLabel })).toBeInTheDocument()
+    expect(screen.queryByText('Recherche des créneaux…')).not.toBeInTheDocument()
   })
 })

@@ -11,9 +11,14 @@ import {
   CustomerPortalAppointmentSummarySchema,
   CustomerPortalChangeRequestResultSchema,
 } from '@/schemas/customerPortal'
+import { AppointmentCancellationResponseSchema } from '@/schemas/appointments'
 
 type PortalAppointment = z.infer<typeof CustomerPortalAppointmentSummarySchema>
 type PortalSlot = { start: string; end: string }
+type PortalAppointmentsProps = {
+  organizationSlug: string
+  organizationTimezone: string
+}
 
 async function readError(response: Response, fallback: string): Promise<string> {
   const body: unknown = await response.json().catch(() => null)
@@ -23,13 +28,19 @@ async function readError(response: Response, fallback: string): Promise<string> 
   return fallback
 }
 
-export default function PortalAppointments({
+export default function PortalAppointments(props: PortalAppointmentsProps) {
+  return (
+    <PortalAppointmentsContent
+      key={JSON.stringify([props.organizationSlug, props.organizationTimezone])}
+      {...props}
+    />
+  )
+}
+
+function PortalAppointmentsContent({
   organizationSlug,
   organizationTimezone,
-}: {
-  organizationSlug: string
-  organizationTimezone: string
-}) {
+}: PortalAppointmentsProps) {
   const [appointments, setAppointments] = useState<PortalAppointment[]>([])
   const [timezone, setTimezone] = useState(organizationTimezone)
   const [loading, setLoading] = useState(true)
@@ -37,15 +48,14 @@ export default function PortalAppointments({
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [changingAppointmentId, setChangingAppointmentId] = useState<string | null>(null)
   const [error, setError] = useState('')
+  const [notificationWarning, setNotificationWarning] = useState<{
+    organizationSlug: string
+    message: string
+  } | null>(null)
 
   useEffect(() => {
     const controller = new AbortController()
     const query = new URLSearchParams({ organizationSlug }).toString()
-    setAppointments([])
-    setTimezone(organizationTimezone)
-    setLoading(true)
-    setAuthenticated(null)
-    setError('')
     void fetch(`/api/portail/rdv?${query}`, {
       cache: 'no-store',
       credentials: 'include',
@@ -80,6 +90,7 @@ export default function PortalAppointments({
   async function cancelAppointment(appointmentId: string) {
     setCancellingId(appointmentId)
     setError('')
+    setNotificationWarning(null)
     try {
       const response = await fetch(`/api/portail/rdv/${encodeURIComponent(appointmentId)}`, {
         method: 'DELETE',
@@ -91,7 +102,22 @@ export default function PortalAppointments({
           'Impossible d’annuler ce rendez-vous. Contactez votre établissement.',
         ))
       }
+      const body: unknown = await response.json().catch(() => null)
+      const result = AppointmentCancellationResponseSchema.safeParse(body)
       setAppointments((current) => current.filter((appointment) => appointment.id !== appointmentId))
+      if (!result.success) {
+        setNotificationWarning({
+          organizationSlug,
+          message: 'Le rendez-vous a été annulé, mais l’envoi de l’e-mail n’a pas pu être confirmé.',
+        })
+        return
+      }
+      if (result.data.notificationWarning) {
+        setNotificationWarning({
+          organizationSlug,
+          message: result.data.notificationWarning,
+        })
+      }
     } catch (cancelError: unknown) {
       setError(cancelError instanceof Error
         ? cancelError.message
@@ -152,6 +178,11 @@ export default function PortalAppointments({
         </section>
       )}
       {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {notificationWarning?.organizationSlug === organizationSlug && (
+        <p role="status" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+          {notificationWarning.message}
+        </p>
+      )}
       {!loading && authenticated && appointments.length === 0 && (
         <p className="rounded-xl border border-dashed border-gray-300 p-6 text-center text-gray-500">
           Vous n’avez pas de rendez-vous à venir.
@@ -214,6 +245,12 @@ export default function PortalAppointments({
             }) && appointment.changeRequest?.status !== 'PENDING' && (
               changingAppointmentId === appointment.id ? (
                 <PortalChangeRequestForm
+                  key={JSON.stringify([
+                    appointment.id,
+                    appointment.serviceId,
+                    appointment.staffId,
+                    organizationSlug,
+                  ])}
                   appointment={appointment}
                   organizationSlug={organizationSlug}
                   timezone={timezone}
@@ -257,13 +294,26 @@ function PortalChangeRequestForm({
   onCreated: (changeRequest: NonNullable<PortalAppointment['changeRequest']>) => void
 }) {
   const [date, setDate] = useState(() => getPortalBookingWindow(new Date(), timezone).minDate)
-  const [slots, setSlots] = useState<PortalSlot[]>([])
+  const [slotResult, setSlotResult] = useState<{
+    key: string
+    slots: PortalSlot[]
+    error: string
+  } | null>(null)
   const [selectedSlot, setSelectedSlot] = useState('')
   const [reason, setReason] = useState('')
-  const [loadingSlots, setLoadingSlots] = useState(false)
   const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState('')
+  const [submissionError, setSubmissionError] = useState('')
   const bookingWindow = getPortalBookingWindow(new Date(), timezone)
+  const slotRequestKey = JSON.stringify([
+    organizationSlug,
+    appointment.serviceId,
+    appointment.staffId,
+    date,
+  ])
+  const currentSlotResult = slotResult?.key === slotRequestKey ? slotResult : null
+  const slots = currentSlotResult?.slots ?? []
+  const loadingSlots = currentSlotResult === null
+  const error = currentSlotResult?.error || submissionError
 
   useEffect(() => {
     const controller = new AbortController()
@@ -272,8 +322,6 @@ function PortalChangeRequestForm({
       staffId: appointment.staffId ?? '',
       date,
     })
-    setLoadingSlots(true)
-    setError('')
     void fetch(
       `/api/portail/${encodeURIComponent(organizationSlug)}/creneaux?${query.toString()}`,
       { signal: controller.signal },
@@ -284,24 +332,27 @@ function PortalChangeRequestForm({
       const body: unknown = await response.json()
       const parsed = CustomerPortalAvailableSlotsSchema.safeParse(body)
       if (!parsed.success) throw new Error('Les créneaux reçus sont invalides.')
-      setSlots(parsed.data.slots)
+      if (controller.signal.aborted) return
+      setSlotResult({ key: slotRequestKey, slots: parsed.data.slots, error: '' })
       setSelectedSlot('')
     }).catch((loadError: unknown) => {
       if (!controller.signal.aborted) {
-        setSlots([])
-        setError(loadError instanceof Error ? loadError.message : 'Impossible de charger les créneaux.')
+        setSlotResult({
+          key: slotRequestKey,
+          slots: [],
+          error: loadError instanceof Error ? loadError.message : 'Impossible de charger les créneaux.',
+        })
+        setSelectedSlot('')
       }
-    }).finally(() => {
-      if (!controller.signal.aborted) setLoadingSlots(false)
     })
     return () => controller.abort()
-  }, [appointment.serviceId, appointment.staffId, date, organizationSlug])
+  }, [appointment.serviceId, appointment.staffId, date, organizationSlug, slotRequestKey])
 
   async function submitRequest(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!selectedSlot) return
     setSubmitting(true)
-    setError('')
+    setSubmissionError('')
     try {
       const response = await fetch(
         `/api/portail/rdv/${encodeURIComponent(appointment.id)}/demande-modification`,
@@ -323,7 +374,9 @@ function PortalChangeRequestForm({
       if (!parsed.success) throw new Error('La demande reçue est invalide.')
       onCreated({ ...parsed.data, reviewReason: null })
     } catch (submitError: unknown) {
-      setError(submitError instanceof Error ? submitError.message : 'Impossible d’envoyer la demande.')
+      setSubmissionError(
+        submitError instanceof Error ? submitError.message : 'Impossible d’envoyer la demande.',
+      )
     } finally {
       setSubmitting(false)
     }
@@ -348,7 +401,12 @@ function PortalChangeRequestForm({
           min={bookingWindow.minDate}
           max={bookingWindow.maxDate}
           value={date}
-          onChange={(event) => setDate(event.target.value)}
+          onChange={(event) => {
+            setDate(event.target.value)
+            setSlotResult(null)
+            setSelectedSlot('')
+            setSubmissionError('')
+          }}
           className="mt-1 block w-full rounded-lg border border-gray-300 p-3"
         />
       </label>
@@ -387,7 +445,7 @@ function PortalChangeRequestForm({
       <div className="flex flex-wrap gap-2">
         <button
           type="submit"
-          disabled={!selectedSlot || submitting}
+          disabled={!selectedSlot || loadingSlots || submitting}
           className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
         >
           {submitting ? 'Envoi…' : 'Envoyer la demande'}

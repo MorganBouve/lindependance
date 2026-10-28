@@ -10,6 +10,7 @@ import { parseJsonField } from "@/lib/parseAppointmentJson";
 import { getCheckoutErrorMessage, getCheckoutNetworkErrorMessage } from "@/lib/checkoutErrorMessage";
 import { computeSoldProductLine } from "@/domain/billing/vat";
 import { isAppointmentCancelled } from "@/domain/appointment/policies";
+import { AppointmentCancellationResponseSchema } from "@/schemas/appointments";
 import ProductPicker from "@/components/dashboard/ProductPicker";
 
 // Résolution icône produit
@@ -139,7 +140,7 @@ export default function CheckoutModal({ appointment, onClose, onRefresh }: Check
     const [soldProducts, setSoldProducts] = useState<SoldProduct[]>(() => getAppointmentSoldProducts(appointment));
     const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
     const [showProductPicker, setShowProductPicker] = useState(false);
-    const [recentProductIds, setRecentProductIds] = useState<string[]>(() => {
+    const [, setRecentProductIds] = useState<string[]>(() => {
         try {
             if (typeof localStorage === 'undefined') return []
             const raw = localStorage.getItem('recent_products')
@@ -268,7 +269,14 @@ export default function CheckoutModal({ appointment, onClose, onRefresh }: Check
                 toast.error(getCheckoutErrorMessage("delete", res.status, data));
                 return;
             }
-            toast.success('RDV supprimé');
+            const deletion = AppointmentCancellationResponseSchema.safeParse(data);
+            if (!deletion.success) {
+                toast.warning("Rendez-vous supprimé, mais le statut de l’e-mail d’annulation n’a pas pu être confirmé.");
+            } else if (deletion.data.notificationWarning) {
+                toast.warning(deletion.data.notificationWarning);
+            } else {
+                toast.success('RDV supprimé');
+            }
             try { window.dispatchEvent(new CustomEvent('appointments:updated')) } catch {}
             onRefresh();
             onClose();

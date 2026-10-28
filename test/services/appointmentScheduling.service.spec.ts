@@ -10,6 +10,7 @@ const { transaction, prismaMock } = vi.hoisted(() => {
       findMany: vi.fn(),
       create: vi.fn(),
       updateMany: vi.fn(),
+      deleteMany: vi.fn(),
     },
     appointmentChangeRequest: { updateMany: vi.fn() },
     unavailability: { findMany: vi.fn() },
@@ -25,7 +26,11 @@ const { transaction, prismaMock } = vi.hoisted(() => {
 
 vi.mock('@/lib/prisma', () => ({ prisma: prismaMock }))
 
-import { createStaffAppointment, updateStaffAppointment } from '@/services/appointmentScheduling.service'
+import {
+  createStaffAppointment,
+  deleteStaffAppointment,
+  updateStaffAppointment,
+} from '@/services/appointmentScheduling.service'
 import { CustomerPortalHttpError } from '@/services/customerPortal.service'
 
 const startsAt = new Date('2026-10-01T10:00:00.000Z')
@@ -44,6 +49,7 @@ beforeEach(() => {
   transaction.unavailability.findMany.mockResolvedValue([])
   transaction.appointment.create.mockResolvedValue({ id: 'appointment-created' })
   transaction.appointment.updateMany.mockResolvedValue({ count: 1 })
+  transaction.appointment.deleteMany.mockResolvedValue({ count: 1 })
   transaction.appointmentChangeRequest.updateMany.mockResolvedValue({ count: 1 })
   transaction.customerPackage.updateMany.mockResolvedValue({ count: 1 })
 })
@@ -154,6 +160,82 @@ describe('staff appointment scheduling service', () => {
       },
       data: expect.objectContaining({ status: 'REJECTED' }),
     }))
+  })
+
+  it('returns scoped cancellation details after deleting a future appointment', async () => {
+    const futureStart = new Date('2026-11-01T10:00:00.000Z')
+    const futureEnd = new Date('2026-11-01T11:00:00.000Z')
+    const createdAt = new Date('2026-09-30T12:00:00.000Z')
+    transaction.appointment.findFirst.mockResolvedValueOnce({
+      id: 'appointment-1',
+      status: 'CONFIRMED',
+      finalPrice: null,
+      startTime: futureStart,
+      endTime: futureEnd,
+      createdAt,
+      calendarSequence: 2,
+      customer: { email: 'client@example.test' },
+      service: { name: 'Coupe' },
+      organization: {
+        id: 'org-1',
+        name: 'Atelier',
+        slug: 'atelier',
+        timezone: 'Europe/Paris',
+      },
+    })
+
+    const result = await deleteStaffAppointment({
+      organizationId: 'org-1',
+      id: 'appointment-1',
+    })
+
+    expect(result).toEqual({
+      organizationId: 'org-1',
+      recipientEmail: 'client@example.test',
+      cancelledBy: 'SALON',
+      cancelledAt: expect.any(Date),
+      appointment: {
+        id: 'appointment-1',
+        startTime: futureStart,
+        endTime: futureEnd,
+        createdAt,
+        calendarSequence: 2,
+        serviceName: 'Coupe',
+        organizationName: 'Atelier',
+        timezone: 'Europe/Paris',
+        organizationSlug: 'atelier',
+      },
+    })
+    expect(transaction.appointment.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: 'appointment-1',
+        organizationId: 'org-1',
+        customer: { is: { organizationId: 'org-1' } },
+        service: { is: { organizationId: 'org-1' } },
+      },
+      select: expect.objectContaining({
+        customer: { select: { email: true } },
+        organization: { select: { id: true, name: true, slug: true, timezone: true } },
+      }),
+    })
+    expect(transaction.appointment.deleteMany).toHaveBeenCalledWith({
+      where: { id: 'appointment-1', organizationId: 'org-1' },
+    })
+  })
+
+  it('does not delete paid appointments or return cancellation details', async () => {
+    transaction.appointment.findFirst.mockResolvedValueOnce({
+      id: 'appointment-1',
+      status: 'PAID',
+      finalPrice: 50,
+    })
+
+    await expect(deleteStaffAppointment({
+      organizationId: 'org-1',
+      id: 'appointment-1',
+    })).rejects.toMatchObject({ status: 403 })
+
+    expect(transaction.appointment.deleteMany).not.toHaveBeenCalled()
   })
 
   it('returns 409 for an overlapping organization-wide unavailability', async () => {

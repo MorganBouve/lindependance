@@ -85,7 +85,7 @@ le lien direct `/portail/qa-salon-reel-20261026-1054-c8f24a/reserver` a aussi
 ouvert le nouveau salon de recette et affiché son nom et son contact public.
 Le domaine racine, le logo et l'apparence de ce nouveau salon restent à vérifier.
 
-#### [ ] CUS-02 — Choisir une prestation, un coiffeur, une date et un horaire
+#### [x] CUS-02 — Choisir une prestation, un coiffeur, une date et un horaire
 **Priorité : P0 · Exigence :** [Req: formal — `customer-portal-phase-1.md`, parcours de réservation]
 
 **Étapes :** essayez de choisir différentes prestations, puis choisissez un
@@ -102,19 +102,25 @@ consultez l'agenda.
 **Automatisé :** `test/api/customer-portal-public.spec.ts`,
 `test/domain/customer-portal/scheduling.spec.ts`,
 `test/ui/portalBooking.spec.tsx`.
-**Résultat / preuve :** PARTIEL — 22/10/2026 en préproduction, le 24/10 la
-coupe homme de 30 minutes proposait des créneaux de 08 h à 19 h 30 et le
-brushing de 70 minutes de 08 h à 18 h 30. Une réservation de chaque prestation
-à 17 h a réussi avec le coiffeur Fanny ; le brushing s'est terminé à 18 h 10.
-Les deux rendez-vous ont été annulés et le créneau de 17 h est redevenu
-disponible pour les deux durées. Un seul coiffeur étant proposé, le choix entre
-plusieurs coiffeurs et le cas `ORG-SOLO` restent à vérifier.
-La limite de 60 jours est couverte par des tests locaux de la date maximale,
-de la borne exacte et du refus côté API ; sa vérification manuelle en
-préproduction reste à faire après déploiement. Le 26/10/2026, sur le nouveau
-salon de recette, une prestation gratuite de 30 minutes et l'unique praticien
-actif ont proposé des créneaux entre 09 h et 17 h (Europe/Paris) ; le créneau
-de 15 h 30 a été réservé. Le parcours avec plusieurs praticiens reste à tester.
+**Résultat / preuve :** PASS — 24/10/2026 en préproduction, deux prestations
+de 30 et 70 minutes ont proposé des créneaux différents selon leur durée ; les
+réservations de test ont été annulées. Le 27/10, deux sessions du même client
+ont essayé le même horaire avec deux praticiens différents : une réservation
+a été confirmée et l'autre refusée, puis le rendez-vous a été supprimé. Après
+désactivation du praticien fictif et actualisation, le salon de recette ne
+proposait plus qu'un seul praticien actif et masquait le sélecteur. Sa seule
+prestation active dure 30 minutes. Une prestation temporaire de 60 minutes a
+permis de vérifier que les créneaux respectent la durée jusqu'à la fermeture
+à 17 h : dernier départ à 16 h 30 pour 30 minutes et à 16 h pour 60 minutes.
+Un blocage de 9 h à 9 h 30 a retiré le départ de 9 h ; après suppression du
+blocage, ce départ a de nouveau été proposé. La prestation temporaire a été
+supprimée et le portail actualisé ne propose plus que la prestation de 30
+minutes.
+
+La limite a été vérifiée manuellement le 27/10 : le 26/12, date située à
+60 jours, était sélectionnable et proposait des créneaux ; le 27/12 était
+refusé avec « Date hors de la période de réservation ». Les tests ciblés de
+domaine, service et API passent (26 tests).
 
 #### [ ] CUS-03 — Vérifier les dates et heures des rendez-vous
 **Priorité : P1 · Exigence :** [Req: formal — `customer-portal.md`, §5.4]
@@ -223,26 +229,40 @@ apparu dans « Mes rendez-vous » et dans l'agenda staff ; il a ensuite été
 supprimé après vérification des e-mails afin de ne laisser aucun rendez-vous
 actif.
 
-#### [ ] CUS-09 — Éviter une double réservation
+#### [x] CUS-09 — Éviter une double réservation
 **Priorité : P0 · Exigence :** [Req: formal — `customer-portal.md`, §4bis et protocole de test]
 
-**Étapes :** ouvrez le même horaire disponible dans deux fenêtres de test et
-confirmez d'abord la réservation dans l'une, puis dans l'autre.
+**Étapes :** faites les deux vérifications suivantes avec les comptes de test :
 
-**Attendu :** le premier rendez-vous est confirmé. Le même horaire n'est plus
-proposé comme disponible et ne peut pas être réservé une deuxième fois.
+1. Deux clients différents choisissent le même horaire avec le même praticien.
+2. Le même client choisit le même horaire avec deux praticiens différents.
+
+Pour chaque vérification, confirmez les deux réservations presque en même
+temps, puis vérifiez l'agenda du salon et les espaces clients concernés.
+
+**Attendu :** pour chaque vérification, un seul rendez-vous est confirmé.
+L'autre réservation est refusée et aucun doublon n'apparaît dans l'agenda.
 
 **Automatisé :** `test/services/customerPortalBooking.spec.ts` couvre un conflit
-dans la transaction ; le test de concurrence multi-session reste une recette
-bêta manuelle.
-**Résultat / preuve :** `________`
+dans la transaction ; ces deux vérifications de concurrence entre sessions
+restent des recettes manuelles.
+**Résultat / preuve : PASS — 27/10/2026 en préproduction.** Pour deux clients
+différents sur le même horaire et le même praticien, une réservation a été
+confirmée et l'autre a reçu « Time slot is no longer available ». Pour le même
+client sur le même horaire avec deux praticiens différents, une réservation a
+été confirmée et l'autre a reçu « Cette fiche client a déjà un rendez-vous sur
+ce créneau ». Dans chaque cas, un seul rendez-vous figurait dans l'agenda. Les
+deux rendez-vous de test ont été supprimés ; après actualisation, les espaces
+clients concernés et l'agenda ne montraient plus de rendez-vous à venir. Le
+praticien fictif ajouté pour le second test a ensuite été désactivé.
 
-#### [ ] CUS-10 — Recevoir la confirmation de réservation
+#### [x] CUS-10 — Recevoir la confirmation de réservation
 **Priorité : P1 · Exigence :** [Req: formal — `customer-portal-phase-1.md`, confirmation e-mail]
 
-**Étapes :** effectuez une réservation dans `ORG-A`, puis une autre dans
-`ORG-B`. Vérifiez les deux e-mails de confirmation. Ouvrez la pièce jointe
-calendrier du message de `ORG-A` dans votre application d'agenda.
+**Étapes :** avec une boîte de recette contrôlée et autorisée, effectuez une
+réservation dans `ORG-A`, puis une autre dans `ORG-B`. Vérifiez les deux
+e-mails de confirmation. Ouvrez la pièce jointe calendrier du message de
+`ORG-A` dans votre application d'agenda.
 
 **Attendu :** le message de `ORG-A` reprend le texte choisi par le salon et
 indique la bonne prestation, la date et l'horaire. `ORG-B` utilise le texte
@@ -254,11 +274,18 @@ pas de réservation supplémentaire.
 `test/api/customer-portal-booking.spec.ts`,
 `test/domain/customer-portal/emailTemplates.spec.ts`. Le fournisseur réel et
 l'import dans une application calendrier sont à vérifier manuellement.
-**Résultat / preuve :** PARTIEL — 26/10/2026 en préproduction, l'utilisateur
-a confirmé la réception de l'e-mail de confirmation et de l'invitation
-calendrier pour la réservation du nouveau salon. Le rendez-vous a été supprimé
-après vérification. L'import dans l'agenda et le parcours d'une seconde
-organisation n'ont pas été testés.
+**Résultat / preuve :** PASS — 26/10/2026 en préproduction, l'utilisateur a
+confirmé la réception de l'e-mail de confirmation et de l'invitation calendrier
+pour le nouveau salon. Le 27/10, l'invitation d'un rendez-vous de test du
+26/12/2026, de 09:00 à 09:30, a été importée dans l'agenda de test ; les bonnes
+informations du salon, de la prestation, du praticien et de l'horaire ont été
+confirmées. Le rendez-vous figurait une seule fois dans le portail client et
+l'agenda staff, puis a été supprimé ; son absence a été vérifiée après
+actualisation. Pour Osez l'Etre, l'utilisateur a confirmé la réception du
+message de confirmation par défaut avec le bon salon, la prestation, la date,
+l'horaire et le fuseau. Le rendez-vous de test a été supprimé par le staff ;
+après actualisation, aucun rendez-vous à venir ne figurait dans le portail
+client.
 
 #### [x] CUS-11 — Retrouver vos prochains rendez-vous
 **Priorité : P0 · Exigence :** [Req: formal — `customer-portal-phase-2.md`, DoD 1–2, 6]
@@ -286,27 +313,35 @@ y compris après actualisation. Campagne « Test Création de rdv 1 », 20/10/20
 **Priorité : P0 · Exigence :** [Req: formal — `customer-portal-phase-2.md`, DoD 3–5]
 
 **Étapes :** annulez `RDV-FAR`, qui n'est pas payé et est prévu dans plus d'un
-jour. Essayez ensuite d'annuler `RDV-NEAR`, qui est prévu dans moins d'un jour.
-Enfin, ouvrez `RDV-PAID`, prévu à plus d'un jour, et vérifiez si l'annulation
-en ligne est proposée. Si un forfait est lié, demandez à l'équipe de vérifier
-son solde de séances après le test.
+jour. Vérifiez le message reçu à l'adresse vérifiée et importez sa pièce jointe
+calendrier dans l'agenda de test pour vérifier que le rendez-vous existant est
+retiré. Essayez ensuite d'annuler `RDV-NEAR`, qui est prévu dans moins d'un
+jour. Enfin, ouvrez `RDV-PAID`, prévu à plus d'un jour, et vérifiez si
+l'annulation en ligne est proposée. Si un forfait est lié, demandez à l'équipe
+de vérifier son solde de séances après le test.
 
 **Attendu :** vous pouvez annuler en ligne le rendez-vous non payé suffisamment
-éloigné. Pour le rendez-vous imminent, l'annulation est refusée et un message
-vous indique de contacter le salon. Le rendez-vous payé reste visible, sans
-action « Annuler », et le message invite aussi à contacter le salon. Le nombre
-de séances du forfait associé, s'il y en a un, ne change pas.
+éloigné et vous recevez un e-mail qui confirme l'annulation. La pièce jointe
+retire du calendrier le même rendez-vous que l'invitation initiale. Pour le
+rendez-vous imminent, l'annulation est refusée et aucun e-mail n'est envoyé ;
+un message vous indique de contacter le salon. Le rendez-vous payé reste
+visible, sans action « Annuler », et le message invite aussi à contacter le
+salon. Le nombre de séances du forfait associé, s'il y en a un, ne change pas.
 
 **Automatisé :** `test/domain/appointment/policies.spec.ts`,
 `test/services/customerPortalAppointments.spec.ts`,
 `test/ui/customerPortalAppointments.spec.tsx`,
-`test/api/customer-portal-appointments.spec.ts`.
+`test/api/customer-portal-appointments.spec.ts`,
+`test/services/appointmentCancellationNotification.spec.ts`,
+`test/services/customerPortalEmail.spec.ts`.
 **Résultat / preuve :** PARTIEL — 22/10/2026 à 00 h 07 en préproduction, le
 rendez-vous non payé du 22/10 à 9 h (moins de 24 h) et celui payé du 23/10 à
 18 h ne proposaient pas « Annuler » et invitaient à contacter le salon. Les
 rendez-vous QA non payés du 24/10 à 17 h ont été annulés depuis le portail ;
 ils ont disparu des deux fenêtres client et leurs créneaux ont été libérés.
-Aucun forfait n'était associé ; son solde reste à vérifier.
+Aucun forfait n'était associé ; son solde reste à vérifier. L'e-mail
+d'annulation et le retrait calendrier restent à vérifier manuellement en
+préproduction après publication du correctif.
 
 ### Demande de changement de créneau — Phase 3
 

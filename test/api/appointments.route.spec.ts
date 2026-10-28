@@ -21,6 +21,9 @@ vi.mock('../../src/services/appointmentScheduling.service', () => ({
   updateStaffAppointment: vi.fn(),
   deleteStaffAppointment: vi.fn(),
 }))
+vi.mock('../../src/services/appointmentCancellationNotification.service', () => ({
+  sendAppointmentCancellationNotification: vi.fn(),
+}))
 
 // --- Imports (after mocks) -------------------------------------------------
 
@@ -31,6 +34,7 @@ import {
   createStaffAppointment,
   deleteStaffAppointment,
 } from '../../src/services/appointmentScheduling.service'
+import { sendAppointmentCancellationNotification } from '../../src/services/appointmentCancellationNotification.service'
 import { CustomerPortalHttpError } from '../../src/services/customerPortal.service'
 
 // ---------------------------------------------------------------------------
@@ -46,6 +50,23 @@ const CUID_STAFF = 'ctest_stf_eee0000000001'
 
 const NOW   = new Date('2026-05-01T10:00:00.000Z')
 const LATER = new Date('2026-05-01T11:00:00.000Z')
+const cancellation = {
+  organizationId: CUID_ORG,
+  recipientEmail: 'client@example.test',
+  cancelledBy: 'SALON' as const,
+  cancelledAt: NOW,
+  appointment: {
+    id: CUID_APT,
+    startTime: NOW,
+    endTime: LATER,
+    createdAt: new Date('2026-04-30T12:00:00.000Z'),
+    calendarSequence: 0,
+    serviceName: 'Coupe',
+    organizationName: 'Atelier',
+    timezone: 'Europe/Paris',
+    organizationSlug: 'atelier',
+  },
+}
 
 function mockSession(orgId = CUID_ORG) {
   ;(auth as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ user: { organizationId: orgId } })
@@ -78,7 +99,8 @@ const VALID_POST_BODY = {
 
 beforeEach(() => {
   vi.resetAllMocks()
-  vi.mocked(deleteStaffAppointment).mockResolvedValue(true)
+  vi.mocked(deleteStaffAppointment).mockResolvedValue(cancellation)
+  vi.mocked(sendAppointmentCancellationNotification).mockResolvedValue({ notificationSent: true })
 })
 
 // ===========================================================================
@@ -198,6 +220,7 @@ describe('DELETE /api/appointments — edge cases', () => {
     const res = await DELETE(req)
 
     expect(res.status).toBe(200)
+    expect(await (res as Response).json()).toEqual({ ok: true, notificationSent: true })
   })
 })
 
@@ -213,18 +236,39 @@ describe('DELETE /api/appointments', () => {
     const body = await (res as Response).json()
 
     expect(res.status).toBe(200)
-    expect(body.ok).toBe(true)
+    expect(body).toEqual({ ok: true, notificationSent: true })
 
     expect(deleteStaffAppointment).toHaveBeenCalledWith({
       id: CUID_APT,
       organizationId: CUID_ORG,
+    })
+    expect(sendAppointmentCancellationNotification).toHaveBeenCalledWith({
+      cancellation,
+      requestOrigin: 'http://localhost',
+    })
+  })
+
+  it('returns a warning when the customer cannot be notified', async () => {
+    mockSession()
+    vi.mocked(sendAppointmentCancellationNotification).mockResolvedValueOnce({
+      notificationSent: false,
+      notificationWarning: 'Aucune adresse e-mail client n’est disponible.',
+    })
+
+    const res = await DELETE(makeDeleteRequest(CUID_APT))
+
+    expect(res.status).toBe(200)
+    expect(await (res as Response).json()).toEqual({
+      ok: true,
+      notificationSent: false,
+      notificationWarning: 'Aucune adresse e-mail client n’est disponible.',
     })
   })
 
   it('🔒 Anti-IDOR — retourne 404 si le RDV appartient à une autre organisation', async () => {
     // Session org A essaie de supprimer un RDV qui n'existe pas sous org A
     mockSession(CUID_ORG)
-    vi.mocked(deleteStaffAppointment).mockResolvedValueOnce(false)
+    vi.mocked(deleteStaffAppointment).mockResolvedValueOnce(null)
 
     const res = await DELETE(makeDeleteRequest(CUID_APT))
 
@@ -233,6 +277,7 @@ describe('DELETE /api/appointments', () => {
       id: CUID_APT,
       organizationId: CUID_ORG,
     })
+    expect(sendAppointmentCancellationNotification).not.toHaveBeenCalled()
   })
 
   it('refuse de supprimer un RDV PAYÉ — retourne 403', async () => {
@@ -247,6 +292,7 @@ describe('DELETE /api/appointments', () => {
     const body = await (res as Response).json()
     expect(body.error).toMatch(/paid/i)
     expect(prisma.appointment.deleteMany).not.toHaveBeenCalled()
+    expect(sendAppointmentCancellationNotification).not.toHaveBeenCalled()
   })
 
   it('retourne 400 si l\'id n\'est pas un CUID valide', async () => {
