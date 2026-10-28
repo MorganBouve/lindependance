@@ -69,10 +69,37 @@ describe('staff appointment changes with pending portal requests', () => {
   })
 
   it('rejects pending requests before physically deleting the original appointment', async () => {
+    const futureStart = new Date('2026-11-01T10:00:00.000Z')
+    transactionMock.appointment.findFirst.mockResolvedValueOnce({
+      id: 'appointment-1',
+      status: 'CONFIRMED',
+      finalPrice: null,
+      startTime: futureStart,
+      endTime: new Date('2026-11-01T11:00:00.000Z'),
+      createdAt: new Date('2026-09-30T12:00:00.000Z'),
+      calendarSequence: 2,
+      customer: { email: 'client@example.test' },
+      service: { name: 'Coupe' },
+      organization: {
+        id: 'org-1',
+        name: 'Atelier',
+        slug: 'atelier',
+        timezone: 'Europe/Paris',
+      },
+    })
+
     await expect(deleteStaffAppointment({
       organizationId: 'org-1',
       id: 'appointment-1',
-    })).resolves.toBe(true)
+    })).resolves.toMatchObject({
+      organizationId: 'org-1',
+      recipientEmail: 'client@example.test',
+      cancelledBy: 'SALON',
+      appointment: {
+        id: 'appointment-1',
+        serviceName: 'Coupe',
+      },
+    })
 
     expect(transactionMock.appointmentChangeRequest.updateMany).toHaveBeenCalledOnce()
     expect(transactionMock.appointment.deleteMany).toHaveBeenCalledWith({
