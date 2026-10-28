@@ -74,6 +74,17 @@ describe('GET /api/appointments', () => {
     expect(findCall.where.organizationId).toBe(CUID_ORG)
   })
 
+  it('exclut les rendez-vous annulés du calendrier staff', async () => {
+    mockSession()
+    ;(prisma.appointment.findMany as ReturnType<typeof vi.fn>).mockResolvedValueOnce([])
+
+    const res = await getAppointments(makeGetRequest('/api/appointments'))
+
+    expect(res.status).toBe(200)
+    const findCall = (prisma.appointment.findMany as ReturnType<typeof vi.fn>).mock.calls[0][0]
+    expect(findCall.where.status).toEqual({ not: 'CANCELLED' })
+  })
+
   it('retourne le mapping complet (title, service, customer, extras, extendedProps)', async () => {
     mockSession()
     const row = {
@@ -258,6 +269,5 @@ describe('GET /api/unavailability', () => {
     expect(findCall.where.AND).toHaveLength(2)
   })
 })
-
 
 
