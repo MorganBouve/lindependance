@@ -7,6 +7,7 @@ import {
   withSerializableRetry,
 } from '@/services/customerPortal.service'
 import { rejectPendingRequestsForAppointment } from '@/services/appointmentChangeRequests.service'
+import type { AppointmentCancellationData } from '@/services/appointmentCancellationNotification.service'
 
 interface CustomerPortalAppointmentIdentity {
   organizationId: string
@@ -112,18 +113,18 @@ export async function getCustomerPortalAppointments(input: CustomerPortalAppoint
 export async function cancelCustomerPortalAppointment(input: CustomerPortalAppointmentIdentity & {
   appointmentId: string
   now?: Date
-}): Promise<void> {
+}): Promise<AppointmentCancellationData> {
   const now = input.now ?? new Date()
   const cancellationCutoff = new Date(now.getTime() + 24 * 60 * 60 * 1000)
 
-  await withSerializableRetry(async (transaction: Prisma.TransactionClient) => {
+  return withSerializableRetry(async (transaction: Prisma.TransactionClient) => {
     const organization = await transaction.organization.findFirst({
       where: {
         id: input.organizationId,
         portalEnabled: true,
         staff: { some: { active: true } },
       },
-      select: { id: true },
+      select: { id: true, name: true, slug: true, timezone: true },
     })
     if (!organization) throw new CustomerPortalHttpError(404, 'Portal not found')
 
@@ -132,6 +133,7 @@ export async function cancelCustomerPortalAppointment(input: CustomerPortalAppoi
         id: input.appointmentId,
         organizationId: organization.id,
         status: { not: 'CANCELLED' },
+        service: { is: { organizationId: organization.id } },
         customer: {
           is: {
             organizationId: organization.id,
@@ -146,6 +148,10 @@ export async function cancelCustomerPortalAppointment(input: CustomerPortalAppoi
         finalPrice: true,
         customerId: true,
         customerPackageId: true,
+        endTime: true,
+        createdAt: true,
+        calendarSequence: true,
+        service: { select: { name: true } },
       },
     })
     if (!appointment) throw new CustomerPortalHttpError(404, 'Appointment not found')
@@ -177,6 +183,7 @@ export async function cancelCustomerPortalAppointment(input: CustomerPortalAppoi
             email: input.verifiedEmail,
           },
         },
+        service: { is: { organizationId: organization.id } },
       },
       data: { status: 'CANCELLED' },
     })
@@ -203,6 +210,24 @@ export async function cancelCustomerPortalAppointment(input: CustomerPortalAppoi
       if (refunded.count !== 1) {
         throw new Error('Customer package could not be refunded for the cancelled appointment')
       }
+    }
+
+    return {
+      organizationId: organization.id,
+      recipientEmail: input.verifiedEmail,
+      cancelledBy: 'CUSTOMER',
+      cancelledAt: now,
+      appointment: {
+        id: appointment.id,
+        startTime: appointment.startTime,
+        endTime: appointment.endTime,
+        createdAt: appointment.createdAt,
+        calendarSequence: appointment.calendarSequence,
+        serviceName: appointment.service.name,
+        organizationName: organization.name,
+        timezone: organization.timezone,
+        organizationSlug: organization.slug,
+      },
     }
   })
 }

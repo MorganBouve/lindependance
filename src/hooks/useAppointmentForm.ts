@@ -8,6 +8,7 @@ import type { DateSelectArg } from '@fullcalendar/core'
 import { useOrganizationSettings } from '@/hooks/useOrganizationSettings'
 import { useCustomerPackages } from '@/hooks/useCustomerPackages'
 import { getUserFacingMutationError, getUserFacingNetworkError } from '@/lib/userFacingMutationError'
+import { AppointmentCancellationResponseSchema } from '@/schemas/appointments'
 
 type Range = { start: Date; end: Date }
 type InitialData = Partial<{
@@ -265,6 +266,17 @@ export function useAppointmentForm({
     try {
       const res = await fetch(`/api/appointments?id=${initialData.id}`, { method: 'DELETE', credentials: 'include' })
       if (res.ok) {
+        const payload: unknown = await res.json().catch(() => null)
+        const deletion = AppointmentCancellationResponseSchema.safeParse(payload)
+        if (!deletion.success) {
+          import('@/lib/clientLogger').then(({ clientError }) => clientError(
+            'Invalid appointment cancellation response',
+            deletion.error,
+          ))
+          toast.warning("Rendez-vous supprimé, mais le statut de l’e-mail d’annulation n’a pas pu être confirmé.")
+        } else if (deletion.data.notificationWarning) {
+          toast.warning(deletion.data.notificationWarning)
+        }
         try { onCloseAction(); await onSuccess() }
         catch (err: unknown) {
           import('@/lib/clientLogger').then(({ clientError }) => clientError('onSuccess failed (delete)', err))
@@ -296,9 +308,6 @@ export function useAppointmentForm({
     getEndTimeLabel, handleServiceChange, handleSave, handleDelete, handleConfirmDelete, handleSaveNote,
   }
 }
-
-
-
 
 
 

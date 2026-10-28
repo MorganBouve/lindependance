@@ -5,7 +5,8 @@ import type { CheckoutAppointment } from "@/types/models";
 const toastMock = vi.hoisted(() => ({
   error: vi.fn(),
   success: vi.fn(),
-}));
+  warning: vi.fn(),
+}))
 const sessionMock = vi.hoisted(() => vi.fn());
 
 vi.mock("sonner", () => ({ toast: toastMock }));
@@ -70,6 +71,43 @@ describe("CheckoutModal error feedback", () => {
         expect.stringContaining("Vérifiez votre connexion"),
       );
     });
+  });
+
+  it("warns when deletion succeeds but the email status cannot be confirmed", async () => {
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(200, []))
+      .mockResolvedValueOnce(jsonResponse(200, { ok: true }));
+
+    render(<CheckoutModal appointment={appointment} onClose={vi.fn()} onRefresh={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Supprimer le RDV" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Supprimer" }));
+
+    await waitFor(() => {
+      expect(toastMock.warning).toHaveBeenCalledWith(
+        "Rendez-vous supprimé, mais le statut de l’e-mail d’annulation n’a pas pu être confirmé.",
+      );
+    });
+    expect(toastMock.success).not.toHaveBeenCalledWith("RDV supprimé");
+  });
+
+  it("shows the cancellation email warning after a successful deletion", async () => {
+    const warning = "Le rendez-vous a été supprimé, mais l’e-mail d’annulation n’a pas pu être envoyé.";
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(200, []))
+      .mockResolvedValueOnce(jsonResponse(200, {
+        ok: true,
+        notificationSent: false,
+        notificationWarning: warning,
+      }));
+
+    render(<CheckoutModal appointment={appointment} onClose={vi.fn()} onRefresh={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Supprimer le RDV" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Supprimer" }));
+
+    await waitFor(() => {
+      expect(toastMock.warning).toHaveBeenCalledWith(warning);
+    });
+    expect(toastMock.success).not.toHaveBeenCalledWith("RDV supprimé");
   });
 
   it("hides custom extras editing for non-admin staff", async () => {

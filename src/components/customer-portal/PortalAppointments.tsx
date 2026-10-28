@@ -11,6 +11,7 @@ import {
   CustomerPortalAppointmentSummarySchema,
   CustomerPortalChangeRequestResultSchema,
 } from '@/schemas/customerPortal'
+import { AppointmentCancellationResponseSchema } from '@/schemas/appointments'
 
 type PortalAppointment = z.infer<typeof CustomerPortalAppointmentSummarySchema>
 type PortalSlot = { start: string; end: string }
@@ -37,6 +38,10 @@ export default function PortalAppointments({
   const [cancellingId, setCancellingId] = useState<string | null>(null)
   const [changingAppointmentId, setChangingAppointmentId] = useState<string | null>(null)
   const [error, setError] = useState('')
+  const [notificationWarning, setNotificationWarning] = useState<{
+    organizationSlug: string
+    message: string
+  } | null>(null)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -80,6 +85,7 @@ export default function PortalAppointments({
   async function cancelAppointment(appointmentId: string) {
     setCancellingId(appointmentId)
     setError('')
+    setNotificationWarning(null)
     try {
       const response = await fetch(`/api/portail/rdv/${encodeURIComponent(appointmentId)}`, {
         method: 'DELETE',
@@ -91,7 +97,22 @@ export default function PortalAppointments({
           'Impossible d’annuler ce rendez-vous. Contactez votre établissement.',
         ))
       }
+      const body: unknown = await response.json().catch(() => null)
+      const result = AppointmentCancellationResponseSchema.safeParse(body)
       setAppointments((current) => current.filter((appointment) => appointment.id !== appointmentId))
+      if (!result.success) {
+        setNotificationWarning({
+          organizationSlug,
+          message: 'Le rendez-vous a été annulé, mais l’envoi de l’e-mail n’a pas pu être confirmé.',
+        })
+        return
+      }
+      if (result.data.notificationWarning) {
+        setNotificationWarning({
+          organizationSlug,
+          message: result.data.notificationWarning,
+        })
+      }
     } catch (cancelError: unknown) {
       setError(cancelError instanceof Error
         ? cancelError.message
@@ -152,6 +173,11 @@ export default function PortalAppointments({
         </section>
       )}
       {error && <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {notificationWarning?.organizationSlug === organizationSlug && (
+        <p role="status" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+          {notificationWarning.message}
+        </p>
+      )}
       {!loading && authenticated && appointments.length === 0 && (
         <p className="rounded-xl border border-dashed border-gray-300 p-6 text-center text-gray-500">
           Vous n’avez pas de rendez-vous à venir.

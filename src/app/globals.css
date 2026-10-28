@@ -23,6 +23,19 @@
     @apply h-full m-0 p-0 overflow-hidden bg-studio-bg text-studio-text antialiased;
     font-family: var(--font-sans);
   }
+
+  button:focus-visible {
+    outline: 2px solid var(--color-studio-text);
+    outline-offset: 2px;
+  }
+
+  button:not(:disabled):not([aria-disabled="true"]):not([aria-busy="true"]):active {
+    filter: brightness(0.92);
+  }
+
+  button:not(:disabled):not([aria-disabled="true"]):not([aria-busy="true"])[data-pressed="true"] {
+    filter: brightness(0.92);
+  }
 }
 
 @utility studio-card {

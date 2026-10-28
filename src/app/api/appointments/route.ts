@@ -11,6 +11,7 @@ import {
     deleteStaffAppointment,
     updateStaffAppointment,
 } from '@/services/appointmentScheduling.service'
+import { sendAppointmentCancellationNotification } from '@/services/appointmentCancellationNotification.service'
 import { CustomerPortalHttpError, SerializableConflictError } from '@/services/customerPortal.service'
 
 function schedulingErrorResponse(error: unknown): Response {
@@ -238,12 +239,16 @@ export async function DELETE(request: Request) {
         }
 
         try {
-            const deleted = await deleteStaffAppointment({
+            const cancellation = await deleteStaffAppointment({
                 id,
                 organizationId: session.user.organizationId,
             })
-            if (!deleted) return NextResponse.json({ error: 'Not found' }, { status: 404 })
-            return NextResponse.json({ ok: true })
+            if (!cancellation) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+            const notification = await sendAppointmentCancellationNotification({
+                cancellation,
+                requestOrigin: new URL(request.url).origin,
+            })
+            return NextResponse.json({ ok: true, ...notification })
         } catch (error: unknown) {
             return schedulingErrorResponse(error)
         }

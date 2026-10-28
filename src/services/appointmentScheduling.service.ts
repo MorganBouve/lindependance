@@ -5,6 +5,7 @@ import {
   withSerializableRetry,
 } from '@/services/customerPortal.service'
 import { rejectPendingRequestsForAppointment } from '@/services/appointmentChangeRequests.service'
+import type { AppointmentCancellationData } from '@/services/appointmentCancellationNotification.service'
 
 export type StaffAppointmentInput = {
   organizationId: string
@@ -236,13 +237,32 @@ export async function updateStaffAppointment(input: {
 export async function deleteStaffAppointment(input: {
   organizationId: string
   id: string
-}): Promise<boolean> {
+}): Promise<AppointmentCancellationData | null> {
+  const cancelledAt = new Date()
   return withSerializableRetry(async (transaction) => {
     const existing = await transaction.appointment.findFirst({
-      where: { id: input.id, organizationId: input.organizationId },
-      select: { id: true, status: true, finalPrice: true },
+      where: {
+        id: input.id,
+        organizationId: input.organizationId,
+        customer: { is: { organizationId: input.organizationId } },
+        service: { is: { organizationId: input.organizationId } },
+      },
+      select: {
+        id: true,
+        status: true,
+        finalPrice: true,
+        startTime: true,
+        endTime: true,
+        createdAt: true,
+        calendarSequence: true,
+        customer: { select: { email: true } },
+        service: { select: { name: true } },
+        organization: {
+          select: { id: true, name: true, slug: true, timezone: true },
+        },
+      },
     })
-    if (!existing) return false
+    if (!existing) return null
     if (!canDeleteAppointment(existing)) {
       throw new CustomerPortalHttpError(403, 'Cannot delete a paid appointment')
     }
@@ -255,6 +275,24 @@ export async function deleteStaffAppointment(input: {
     const deleted = await transaction.appointment.deleteMany({
       where: { id: input.id, organizationId: input.organizationId },
     })
-    return deleted.count === 1
+    if (deleted.count !== 1) return null
+
+    return {
+      organizationId: existing.organization.id,
+      recipientEmail: existing.customer.email,
+      cancelledBy: 'SALON',
+      cancelledAt,
+      appointment: {
+        id: existing.id,
+        startTime: existing.startTime,
+        endTime: existing.endTime,
+        createdAt: existing.createdAt,
+        calendarSequence: existing.calendarSequence,
+        serviceName: existing.service.name,
+        organizationName: existing.organization.name,
+        timezone: existing.organization.timezone,
+        organizationSlug: existing.organization.slug,
+      },
+    }
   })
 }

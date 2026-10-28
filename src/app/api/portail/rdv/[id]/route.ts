@@ -7,6 +7,7 @@ import {
   SerializableConflictError,
 } from '@/services/customerPortal.service'
 import { cancelCustomerPortalAppointment } from '@/services/customerPortalAppointments.service'
+import { sendAppointmentCancellationNotification } from '@/services/appointmentCancellationNotification.service'
 
 interface RouteContext {
   params: Promise<{ id: string }>
@@ -36,12 +37,16 @@ export async function DELETE(request: Request, context: RouteContext) {
   }
 
   try {
-    await cancelCustomerPortalAppointment({
+    const cancellation = await cancelCustomerPortalAppointment({
       appointmentId: parsedId.data,
       organizationId: session.organizationId,
       verifiedEmail: session.verifiedEmail,
     })
-    return NextResponse.json({ ok: true })
+    const notification = await sendAppointmentCancellationNotification({
+      cancellation,
+      requestOrigin: new URL(request.url).origin,
+    })
+    return NextResponse.json({ ok: true, ...notification })
   } catch (error: unknown) {
     if (isCustomerPortalHttpError(error)) {
       return NextResponse.json({ error: error.message }, { status: error.status })

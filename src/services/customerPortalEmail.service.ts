@@ -8,6 +8,7 @@ export interface AppointmentConfirmation {
   createdAt: Date
   lastModified?: Date
   sequence?: number
+  calendarMethod?: 'REQUEST' | 'CANCEL'
   serviceName: string
   organizationName: string
   timezone: string
@@ -17,7 +18,7 @@ export interface AppointmentConfirmation {
 function escapeIcsText(value: string): string {
   return value
     .replace(/\\/g, '\\\\')
-    .replace(/\r?\n/g, '\\n')
+    .replace(/\r\n|\r|\n/g, '\\n')
     .replace(/,/g, '\\,')
     .replace(/;/g, '\\;')
 }
@@ -40,17 +41,19 @@ function renderPlainTextEmail(value: string): string {
 }
 
 export function createAppointmentIcs(appointment: AppointmentConfirmation): string {
+  const calendarMethod = appointment.calendarMethod ?? 'REQUEST'
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'PRODID:-//Independance//Customer Portal//FR',
     'CALSCALE:GREGORIAN',
-    'METHOD:REQUEST',
+    `METHOD:${calendarMethod}`,
     `X-WR-TIMEZONE:${escapeIcsText(appointment.timezone)}`,
     'BEGIN:VEVENT',
     `UID:${escapeIcsText(appointment.id)}@customer-portal`,
     `DTSTAMP:${formatUtcDate(appointment.lastModified ?? appointment.createdAt)}`,
-    ...(appointment.sequence !== undefined ? [`SEQUENCE:${appointment.sequence}`] : []),
+    `SEQUENCE:${appointment.sequence ?? 0}`,
+    ...(calendarMethod === 'CANCEL' ? ['STATUS:CANCELLED'] : []),
     `DTSTART:${formatUtcDate(appointment.startTime)}`,
     `DTEND:${formatUtcDate(appointment.endTime)}`,
     `SUMMARY:${escapeIcsText(appointment.serviceName)}`,
@@ -180,6 +183,62 @@ export async function sendAppointmentConfirmation(input: {
   })
 
   if (result.error) throw new Error(`Resend failed to send appointment confirmation: ${result.error.message}`)
+}
+
+export async function sendAppointmentCancellationEmail(input: {
+  to: string
+  cancelledBy: 'CUSTOMER' | 'SALON'
+  portalUrl: string | null
+  appointment: AppointmentConfirmation & {
+    lastModified: Date
+    sequence: number
+    calendarMethod: 'CANCEL'
+  }
+}): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) throw new Error('RESEND_API_KEY is not configured')
+
+  const appointment = input.appointment
+  const dateFormatter = new Intl.DateTimeFormat('fr-FR', {
+    timeZone: appointment.timezone,
+    dateStyle: 'full',
+  })
+  const timeFormatter = new Intl.DateTimeFormat('fr-FR', {
+    timeZone: appointment.timezone,
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+  const organizationName = appointment.organizationName.replace(/[\r\n]/g, ' ')
+  const localizedDate = dateFormatter.format(appointment.startTime)
+  const localizedStart = timeFormatter.format(appointment.startTime)
+  const localizedEnd = timeFormatter.format(appointment.endTime)
+  const cancellationMessage = input.cancelledBy === 'CUSTOMER'
+    ? 'Votre rendez-vous a bien été annulé à votre demande.'
+    : 'Le salon a annulé votre rendez-vous.'
+  const portalLink = input.portalUrl
+    ? `<p><a href="${escapeHtml(input.portalUrl)}">Consulter mes rendez-vous</a></p>`
+    : ''
+
+  const result = await new Resend(apiKey).emails.send({
+    from: process.env.RESEND_FROM || 'no-reply@studio.test',
+    to: input.to,
+    subject: `Annulation de votre rendez-vous chez ${organizationName}`,
+    html: [
+      '<div style="font-family:system-ui,sans-serif;line-height:1.6">',
+      '<p>Bonjour,</p>',
+      `<p>${cancellationMessage}</p>`,
+      `<p><strong>${escapeHtml(appointment.serviceName)}</strong><br>${escapeHtml(localizedDate)} de ${escapeHtml(localizedStart)} à ${escapeHtml(localizedEnd)}</p>`,
+      portalLink,
+      `<p>À bientôt,<br>${escapeHtml(organizationName)}</p>`,
+      '</div>',
+    ].join(''),
+    attachments: [{
+      filename: 'annulation-rendez-vous.ics',
+      content: Buffer.from(createAppointmentIcs(appointment)),
+    }],
+  })
+
+  if (result.error) throw new Error(`Resend failed to send appointment cancellation: ${result.error.message}`)
 }
 
 export async function sendAppointmentChangeDecisionEmail(input: {

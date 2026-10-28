@@ -35,6 +35,12 @@ export const UpdatePaymentDetailsSchema = z.object({
   note: z.string().max(1000).optional().nullable(),
 })
 
+export const AppointmentCancellationResponseSchema = z.object({
+  ok: z.literal(true),
+  notificationSent: z.boolean(),
+  notificationWarning: z.string().optional(),
+})
+
 export type UpdatePaymentDetailsInput = z.infer<typeof UpdatePaymentDetailsSchema>
 export const CheckoutInputSchema = z.object({
   paymentMethod: z.enum(['CB', 'CASH', 'CHECK']),

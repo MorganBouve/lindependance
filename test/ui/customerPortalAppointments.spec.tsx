@@ -71,7 +71,7 @@ describe('PortalAppointments', () => {
   it('removes the appointment after a successful cancellation', async () => {
     const fetchMock = vi.mocked(fetch)
     fetchMock.mockResolvedValueOnce(response(appointments))
-    fetchMock.mockResolvedValueOnce(response({ ok: true }))
+    fetchMock.mockResolvedValueOnce(response({ ok: true, notificationSent: true }))
 
     render(<PortalAppointments organizationSlug="atelier" organizationTimezone="Europe/Paris" />)
     fireEvent.click(await screen.findByRole('button', { name: 'Annuler' }))
@@ -85,6 +85,38 @@ describe('PortalAppointments', () => {
     await waitFor(() => {
       expect(screen.queryByText('Camille Martin')).not.toBeInTheDocument()
     })
+  })
+
+  it('removes the appointment and shows a warning when cancellation email fails', async () => {
+    const fetchMock = vi.mocked(fetch)
+    fetchMock.mockResolvedValueOnce(response(appointments))
+    fetchMock.mockResolvedValueOnce(response({
+      ok: true,
+      notificationSent: false,
+      notificationWarning: 'Le rendez-vous a été annulé, mais l’e-mail n’a pas pu être envoyé.',
+    }))
+
+    render(<PortalAppointments organizationSlug="atelier" organizationTimezone="Europe/Paris" />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Annuler' }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Le rendez-vous a été annulé, mais l’e-mail n’a pas pu être envoyé.',
+    )
+    expect(screen.queryByText('Camille Martin')).not.toBeInTheDocument()
+  })
+
+  it('removes the appointment and warns when the email status cannot be confirmed', async () => {
+    const fetchMock = vi.mocked(fetch)
+    fetchMock.mockResolvedValueOnce(response(appointments))
+    fetchMock.mockResolvedValueOnce(response({ ok: true }))
+
+    render(<PortalAppointments organizationSlug="atelier" organizationTimezone="Europe/Paris" />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Annuler' }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'Le rendez-vous a été annulé, mais l’envoi de l’e-mail n’a pas pu être confirmé.',
+    )
+    expect(screen.queryByText('Camille Martin')).not.toBeInTheDocument()
   })
 
   it('prompts unauthenticated visitors to verify their email before viewing appointments', async () => {

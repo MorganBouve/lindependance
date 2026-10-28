@@ -40,12 +40,27 @@ en cours de traitement.
   - Les règles sont couvertes par des tests de domaine et de service.
 - **Résultat :** Le domaine et la mise à jour transactionnelle bloquent les rendez-vous payés, y compris si seul `finalPrice` indique le paiement. Les tests ciblés, le lint et le type-check réussissent ; une vérification manuelle en bêta reste nécessaire.
 
+#### Notifier le client d'une annulation ou suppression de rendez-vous
+
+- **Type :** Amélioration
+- **Statut :** Implémentée localement le 27 octobre 2026 ; réception réelle de l'e-mail et retrait de l'événement calendrier à vérifier en préproduction après publication.
+- **Priorité proposée :** P1
+- **Constat :** Le code n'envoie pas de notification lorsque le client annule un rendez-vous en ligne ou lorsque le salon le supprime depuis l'agenda. La confirmation de réservation et la décision sur une demande de changement sont les seuls e-mails concernés.
+- **Amélioration souhaitée :** Prévenir le client après l'annulation d'un rendez-vous futur par lui-même ou sa suppression par le salon, si son adresse e-mail est disponible.
+- **Critères d'acceptation :**
+  - Une annulation client réussie envoie un e-mail à l'adresse vérifiée de la session ; une suppression par le salon envoie un e-mail à l'adresse enregistrée sur la fiche client si elle existe.
+  - L'e-mail décrit clairement qui a annulé le rendez-vous et indique le salon, la prestation, la date et l'horaire dans le fuseau du salon.
+  - La pièce jointe calendrier annule le même événement (`UID` identique, `SEQUENCE` incrémentée, `METHOD:CANCEL` et statut `CANCELLED`).
+  - Un refus d'annulation, un rendez-vous passé ou l'absence d'adresse ne déclenche pas d'e-mail ; le salon est averti si l'adresse manque.
+  - Un échec du fournisseur d'e-mail ne rétablit pas le rendez-vous ; le client ou le salon voit un avertissement explicite.
+  - Les recherches d'adresse, l'envoi et la suppression du rendez-vous restent limités à la même organisation.
+
 ### Portail client — réservation en ligne
 
 #### Guider les nouveaux clients vers un appel au salon
 
 - **Type :** Amélioration
-- **Statut :** Implémentée localement et couverte par un test UI ; validation manuelle en préproduction après publication.
+- **Statut :** Implémentée et vérifiée en préproduction le 26 octobre 2026.
 - **Priorité proposée :** P1
 - **Constat :** La réservation en ligne est limitée aux personnes dont l'adresse correspond à une fiche client déjà créée par le salon. Un nouveau client peut ne pas comprendre pourquoi il ne reçoit pas de code.
 - **Amélioration souhaitée :** Expliquer sur le portail qu'un premier rendez-vous nécessite de contacter le salon, avec une consigne d'appel lorsque son téléphone public est configuré.
@@ -53,6 +68,20 @@ en cours de traitement.
   - Tout visiteur non authentifié voit la consigne, sans qu'elle dépende de l'adresse saisie ou de l'existence d'une fiche client.
   - Si un téléphone public est configuré, la consigne invite à appeler et le numéro reste cliquable ; sans téléphone, elle invite à contacter le salon par le canal public disponible.
   - La réponse de demande de code reste générique et le parcours public ne crée aucune fiche client.
+
+#### Normaliser les adresses e-mail en minuscules
+
+- **Type :** Amélioration
+- **Statut :** À cadrer — demande reçue le 27 octobre 2026 ; non implémentée.
+- **Priorité proposée :** P2
+- **Constat :** Les adresses e-mail peuvent être saisies ou affichées avec des majuscules, ce qui nuit à la cohérence et peut compliquer leur comparaison dans les parcours client et staff.
+- **Amélioration souhaitée :** Traiter et afficher les adresses e-mail en minuscules de façon cohérente dans l'application.
+- **Critères d'acceptation :**
+  - Une adresse saisie avec des majuscules est normalisée en minuscules dans les parcours concernés.
+  - Les recherches, comparaisons et connexions par e-mail fonctionnent quel que soit le mélange de majuscules et minuscules saisi.
+  - Les formulaires et fiches qui affichent une adresse e-mail la présentent en minuscules.
+  - Des tests couvrent les saisies mixtes pour les parcours client et staff concernés.
+  - Vérifier avant mise en œuvre que la normalisation complète reste compatible avec les adresses et fournisseurs d'e-mail pris en charge.
 
 #### Limiter les réservations à deux mois glissants
 
@@ -106,6 +135,22 @@ en cours de traitement.
   - Des tests couvrent l'approbation, le refus avec et sans motif, l'absence d'envoi si la décision échoue, l'adresse vérifiée et l'isolation entre organisations.
 - **Décision prise :** l'e-mail d'approbation joint une invitation calendrier `.ics` mise à jour avec le même UID et une séquence incrémentée.
 - **Vérification restante :** appliquer la migration en préproduction, contrôler la réception réelle des e-mails dans une boîte de test et importer l'invitation mise à jour dans Google Calendar.
+
+### Agenda staff — indisponibilités
+
+#### Rendre le motif du blocage réellement facultatif
+
+- **Type :** Bug
+- **Statut :** À corriger — reproduit en préproduction le 27 octobre 2026.
+- **Priorité proposée :** P2
+- **Comportement observé :** Le formulaire indique que la raison est facultative, mais l'API refuse une création sans titre. Pour des dates et heures valides, le portail affiche alors un message trompeur indiquant que la fin doit être après le début.
+- **Comportement attendu :** Une indisponibilité peut être enregistrée sans raison, comme l'indique le formulaire ; une date ou une heure invalide reçoit un message correspondant à l'erreur réelle.
+- **Étapes de reproduction :** Dans l'agenda staff de préproduction, ouvrir « Bloquer un créneau », laisser « Raison (facultative) » vide, saisir des dates et heures valides, puis enregistrer. L'API répond `400` et le message affiché parle de l'ordre des dates.
+- **Impact :** Le personnel ne peut pas créer un blocage sans motif et ne comprend pas pourquoi l'enregistrement échoue.
+- **Critères d'acceptation :**
+  - Un blocage avec des dates et heures valides est créé lorsque la raison est vide.
+  - Le formulaire et l'API appliquent la même règle sur la raison.
+  - Les erreurs de dates affichent un message adapté à la date ou l'heure invalide ; une raison vide ne produit pas ce message.
 
 ### Signalement du 19 octobre 2026
 
@@ -404,7 +449,7 @@ en cours de traitement.
 ### Retour visuel à l'appui sur les boutons
 
 - **Type :** Amélioration
-- **Statut :** À cadrer — amélioration transversale à appliquer de façon cohérente aux boutons des parcours staff et client.
+- **Statut :** Implémentée localement le 28 octobre 2026 ; vérification sur appareils réels à effectuer après publication.
 - **Priorité proposée :** P2
 - **Constat :** Lorsqu'on appuie sur certains boutons, leur apparence ne change pas de façon perceptible ; il est difficile de savoir si l'appui a été pris en compte.
 - **Amélioration souhaitée :** Donner un retour visuel bref et cohérent à l'activation d'un bouton, par exemple une légère variation de couleur, de relief ou d'échelle.
@@ -414,6 +459,7 @@ en cours de traitement.
   - L'activation au clavier reste accompagnée d'un indicateur visible et accessible.
   - Les états désactivé et en chargement restent distincts du retour d'appui.
   - Le retour n'entraîne pas de déplacement de mise en page ni de répétition involontaire de l'action.
+- **Résultat :** Retour bref à la souris et au toucher, indicateur de focus clavier visible ; les boutons désactivés et occupés sont exclus. Les quatre tests Playwright ciblés passent.
 
 ### Vérifications manuelles bêta restantes
 
@@ -424,7 +470,8 @@ vérifications manuelles suivantes dans les guides de recette :
   son affichage côté client.
 - Après déploiement de la correction du service worker, ouvrir puis recharger le
   portail client et vérifier que la réservation reste accessible.
-- Vérifier les e-mails personnalisés avec `CUS-05`, `CUS-10` et `ADM-13`.
+- Vérifier les e-mails personnalisés avec `CUS-05` et `ADM-13` ; les résultats
+  réels de `CUS-10` sont consignés dans le guide client.
 - Appliquer la migration des signalements à la base bêta, puis vérifier les
   parcours client et staff avec `CUS-17` et `ADM-12`.
 
@@ -633,7 +680,7 @@ continue de vérifier l'accès à l'e-mail au moment de la connexion grâce au c
     - Le client reçoit le code et la confirmation personnalisés de la bonne organisation, avec les bonnes informations de rendez-vous.
     - Le retour au modèle par défaut est vérifié pour les deux e-mails ; la confirmation conserve sa pièce jointe calendrier.
     - Les scénarios sont inclus dans les groupes de campagne correspondant aux profils client et staff/admin.
-- **Mise à jour :** `CUS-05`, `CUS-10` et `ADM-13` couvrent maintenant ces vérifications ; `ADM-13` est inclus dans le groupe « Administration staff ». Les résultats réels restent à renseigner pendant la campagne bêta.
+- **Mise à jour :** `CUS-05`, `CUS-10` et `ADM-13` couvrent maintenant ces vérifications ; `ADM-13` est inclus dans le groupe « Administration staff ». Le résultat réel de `CUS-10` est consigné dans le guide client (27 octobre 2026) ; `CUS-05`, `ADM-13` et la vérification staff de l'enregistrement/rétablissement des modèles restent à effectuer.
 
 #### Créer automatiquement une carte GitHub pour chaque campagne de recette
 
@@ -841,7 +888,7 @@ continue de vérifier l'accès à l'e-mail au moment de la connexion grâce au c
 ### Afficher des erreurs explicites dans les popups
 
 - **Parcours couverts :** Rendez-vous (création, modification, déplacement, suppression), encaissement, indisponibilités et paramètres d’horaires et d’objectif financier.
-- **Résultat :** Les erreurs réseau et réponses d’échec indiquent une action utile ; les détails techniques du serveur ne sont pas affichés. Les erreurs de formulaire conservent leurs messages de validation.
+- **Résultat :** Les erreurs réseau et réponses d’échec indiquent une action utile ; les détails techniques du serveur ne sont pas affichés. Le test du 27 octobre 2026 révèle toutefois une exception pour le motif facultatif d'indisponibilité ; voir l'entrée correspondante dans « Agenda staff — indisponibilités ».
 
 ## Modèle pour ajouter une tâche
 
