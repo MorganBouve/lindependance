@@ -577,6 +577,21 @@ e-mail n'a été créé. Aucun test n'a été effectué en production.
 Après cette vérification, le portail a été configuré et activé séparément pour
 la recette client ; voir CUS-01, CUS-02, CUS-05, CUS-06, CUS-08 et CUS-10.
 
+#### [ ] ADM-26 — Vérifier qu'un rendez-vous annulé disparaît de l'agenda
+**Priorité : P1 · Exigence :** [Req: formal — `customer-portal-phase-2.md`, DoD 8]
+
+**Étapes :** après qu'un client a annulé un rendez-vous de test futur depuis son
+espace, ouvrez l'agenda du salon. Actualisez la page et revenez au jour du
+rendez-vous annulé.
+
+**Attendu :** le rendez-vous annulé n'apparaît plus dans l'agenda après
+actualisation. Les autres rendez-vous restent visibles.
+
+**Automatisé :** `test/api/get.routes.spec.ts` vérifie que le chargement de
+l'agenda exclut les rendez-vous annulés. Le contrôle visuel en préproduction
+reste à refaire après publication du correctif.
+**Résultat / preuve :** À vérifier en préproduction après publication.
+
 ## Couverture automatisée relue
 
 Les suites automatisées pertinentes sont indiquées sous chaque scénario. Elles

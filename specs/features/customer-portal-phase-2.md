@@ -31,6 +31,8 @@ associées à son email vérifié et d'annuler en ligne les rendez-vous admissib
   contacter le staff. Le contrôle est toujours serveur et utilise le fuseau
   de l'organisation.
 - Passer le statut à `CANCELLED` sans supprimer la ligne.
+- Exclure les rendez-vous au statut `CANCELLED` de la liste d'événements
+  chargée par l'agenda staff, tout en conservant leur ligne pour l'historique.
 - Pour un rendez-vous lié à un `CustomerPackage`, recréditer
   `sessionsRemaining` atomiquement uniquement lorsque l'annulation est
   autorisée.
@@ -71,3 +73,5 @@ associées à son email vérifié et d'annuler en ligne les rendez-vous admissib
    futur envoie un e-mail au client lorsque son adresse est disponible. La
    pièce jointe annule le même événement calendrier ; un échec d'envoi ne
    rétablit pas le rendez-vous et est signalé sans message de succès trompeur.
+8. Un rendez-vous annulé reste conservé avec le statut `CANCELLED`, mais
+   n'apparaît plus dans l'agenda staff après actualisation.

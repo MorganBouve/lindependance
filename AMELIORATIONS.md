@@ -43,7 +43,7 @@ en cours de traitement.
 #### Notifier le client d'une annulation ou suppression de rendez-vous
 
 - **Type :** Amélioration
-- **Statut :** Implémentée localement le 27 octobre 2026 ; réception réelle de l'e-mail et retrait de l'événement calendrier à vérifier en préproduction après publication.
+- **Statut :** Implémentée et vérifiée en préproduction le 28 octobre 2026 ; un bug distinct d'affichage dans l'agenda staff est suivi ci-dessous.
 - **Priorité proposée :** P1
 - **Constat :** Le code n'envoie pas de notification lorsque le client annule un rendez-vous en ligne ou lorsque le salon le supprime depuis l'agenda. La confirmation de réservation et la décision sur une demande de changement sont les seuls e-mails concernés.
 - **Amélioration souhaitée :** Prévenir le client après l'annulation d'un rendez-vous futur par lui-même ou sa suppression par le salon, si son adresse e-mail est disponible.
@@ -54,6 +54,23 @@ en cours de traitement.
   - Un refus d'annulation, un rendez-vous passé ou l'absence d'adresse ne déclenche pas d'e-mail ; le salon est averti si l'adresse manque.
   - Un échec du fournisseur d'e-mail ne rétablit pas le rendez-vous ; le client ou le salon voit un avertissement explicite.
   - Les recherches d'adresse, l'envoi et la suppression du rendez-vous restent limités à la même organisation.
+- **Vérification en préproduction :** Les deux e-mails d'annulation et le retrait des invitations calendrier ont été confirmés par l'utilisateur le 28 octobre 2026.
+
+### Agenda staff — rendez-vous
+
+#### Masquer les rendez-vous annulés dans l'agenda du salon
+
+- **Type :** Bug
+- **Statut :** Correctif implémenté localement le 28 octobre 2026 ; vérification manuelle après publication.
+- **Priorité proposée :** P1
+- **Comportement observé :** Après l'annulation d'un rendez-vous depuis le portail client, il disparaît du portail mais reste affiché dans l'agenda staff, y compris après rechargement. L'événement reste ouvrable depuis l'agenda.
+- **Comportement attendu :** Un rendez-vous au statut `CANCELLED` n'apparaît plus dans l'agenda staff. La ligne reste conservée en base pour préserver son statut et son historique.
+- **Étapes de reproduction :** Créer un rendez-vous QA futur non payé, l'annuler depuis le portail client, puis recharger l'agenda staff à la même date.
+- **Impact :** L'agenda présente un rendez-vous annulé comme s'il était encore actif et peut induire le personnel en erreur.
+- **Critères d'acceptation :**
+  - Le chargement de l'agenda staff exclut les rendez-vous au statut `CANCELLED`, sans supprimer leur ligne en base.
+  - Les rendez-vous annulés n'apparaissent plus dans l'agenda après actualisation ; les rendez-vous actifs restent visibles.
+  - Un test vérifie le filtre serveur tout en conservant le filtrage par `organizationId`.
 
 ### Portail client — réservation en ligne
 

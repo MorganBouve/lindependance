@@ -33,7 +33,7 @@ export function getTestScenarioLinks(
     if (number === 25) {
       return [{ href: '/test-salons', label: 'Gérer les salons' }]
     }
-    if ((number >= 7 && number <= 10) || number === 20) {
+    if ((number >= 7 && number <= 10) || number === 20 || number === 26) {
       return [{ href: '/agenda', label: 'Ouvrir l’agenda staff' }]
     }
     return []

@@ -45,8 +45,13 @@ export async function GET(request: Request) {
         if (!queryParsed.success) return NextResponse.json({ error: 'Invalid params', details: queryParsed.error.format() }, { status: 400 })
         const { start: startParam, end: endParam } = queryParsed.data
 
-        const where: { organizationId: string; startTime?: { gte?: Date; lte?: Date } } = {
-            organizationId
+        const where: {
+            organizationId: string
+            status: { not: string }
+            startTime?: { gte?: Date; lte?: Date }
+        } = {
+            organizationId,
+            status: { not: 'CANCELLED' },
         }
 
         if (startParam) {
