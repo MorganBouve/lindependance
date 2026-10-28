@@ -588,9 +588,13 @@ rendez-vous annulé.
 actualisation. Les autres rendez-vous restent visibles.
 
 **Automatisé :** `test/api/get.routes.spec.ts` vérifie que le chargement de
-l'agenda exclut les rendez-vous annulés. Le contrôle visuel en préproduction
-reste à refaire après publication du correctif.
-**Résultat / preuve :** À vérifier en préproduction après publication.
+l'agenda exclut les rendez-vous annulés. Le contrôle visuel a été effectué en
+préproduction le 28/10 après la fusion du correctif.
+**Résultat / preuve :** PARTIEL — après actualisation de l'agenda d'Osez l'Etre,
+le rendez-vous QA annulé prévu le 29/10 à 14 h n'apparaissait plus dans la
+semaine du 26/10 au 01/11. Aucun rendez-vous actif n'était visible après
+actualisation ; la vérification que les autres rendez-vous restent visibles
+reste à faire sans créer de nouvelle donnée de test.
 
 ## Couverture automatisée relue
 

@@ -61,7 +61,7 @@ en cours de traitement.
 #### Masquer les rendez-vous annulés dans l'agenda du salon
 
 - **Type :** Bug
-- **Statut :** Correctif implémenté localement le 28 octobre 2026 ; vérification manuelle après publication.
+- **Statut :** Correctif fusionné dans `preprod` le 28 octobre 2026 via la PR #137 ; contrôle visuel partiel effectué après publication.
 - **Priorité proposée :** P1
 - **Comportement observé :** Après l'annulation d'un rendez-vous depuis le portail client, il disparaît du portail mais reste affiché dans l'agenda staff, y compris après rechargement. L'événement reste ouvrable depuis l'agenda.
 - **Comportement attendu :** Un rendez-vous au statut `CANCELLED` n'apparaît plus dans l'agenda staff. La ligne reste conservée en base pour préserver son statut et son historique.
@@ -71,6 +71,7 @@ en cours de traitement.
   - Le chargement de l'agenda staff exclut les rendez-vous au statut `CANCELLED`, sans supprimer leur ligne en base.
   - Les rendez-vous annulés n'apparaissent plus dans l'agenda après actualisation ; les rendez-vous actifs restent visibles.
   - Un test vérifie le filtre serveur tout en conservant le filtrage par `organizationId`.
+- **Vérification en préproduction le 28/10/2026 :** après fusion de la PR #137, le rendez-vous annulé n'apparaissait plus dans l'agenda après actualisation. Aucun rendez-vous actif n'était visible dans la semaine contrôlée ; la visibilité des rendez-vous actifs reste à vérifier.
 
 ### Portail client — réservation en ligne
 
