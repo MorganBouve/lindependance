@@ -334,14 +334,14 @@ salon. Le nombre de séances du forfait associé, s'il y en a un, ne change pas.
 `test/api/customer-portal-appointments.spec.ts`,
 `test/services/appointmentCancellationNotification.spec.ts`,
 `test/services/customerPortalEmail.spec.ts`.
-**Résultat / preuve :** PARTIEL — 22/10/2026 à 00 h 07 en préproduction, le
-rendez-vous non payé du 22/10 à 9 h (moins de 24 h) et celui payé du 23/10 à
-18 h ne proposaient pas « Annuler » et invitaient à contacter le salon. Les
-rendez-vous QA non payés du 24/10 à 17 h ont été annulés depuis le portail ;
-ils ont disparu des deux fenêtres client et leurs créneaux ont été libérés.
-Aucun forfait n'était associé ; son solde reste à vérifier. L'e-mail
-d'annulation et le retrait calendrier restent à vérifier manuellement en
-préproduction après publication du correctif.
+**Résultat / preuve :** PARTIEL — 22/10/2026 en préproduction, le rendez-vous
+non payé prévu à moins de 24 h et celui payé prévu à plus d'un jour ne
+proposaient pas « Annuler » et invitaient à contacter le salon. Des rendez-vous
+QA non payés ont été annulés depuis le portail ; ils ont disparu des fenêtres
+client et leurs créneaux ont été libérés. Le 28/10, l'utilisateur a confirmé
+la réception de l'e-mail d'annulation et le retrait du même événement par la
+pièce jointe calendrier. Aucun forfait n'était associé. L'absence d'e-mail
+pour les demandes d'annulation refusées n'a pas été vérifiée séparément.
 
 ### Demande de changement de créneau — Phase 3
 
