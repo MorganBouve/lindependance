@@ -140,7 +140,7 @@ export default function CheckoutModal({ appointment, onClose, onRefresh }: Check
     const [soldProducts, setSoldProducts] = useState<SoldProduct[]>(() => getAppointmentSoldProducts(appointment));
     const [availableProducts, setAvailableProducts] = useState<Product[]>([]);
     const [showProductPicker, setShowProductPicker] = useState(false);
-    const [recentProductIds, setRecentProductIds] = useState<string[]>(() => {
+    const [, setRecentProductIds] = useState<string[]>(() => {
         try {
             if (typeof localStorage === 'undefined') return []
             const raw = localStorage.getItem('recent_products')
