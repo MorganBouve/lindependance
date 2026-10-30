@@ -78,7 +78,7 @@ export default function ServiceManager() {
                         {isEditing ? "Modifier la prestation" : "Ajouter une prestation"}
                     </h2>
                     {isEditing && (
-                        <button onClick={cancelEdit} className="text-slate-400 hover:text-slate-600 flex items-center gap-1 text-sm font-medium">
+                        <button type="button" onClick={cancelEdit} className="text-slate-700 hover:text-slate-900 flex items-center gap-1 text-sm font-medium">
                             <X size={16} /> Annuler
                         </button>
                     )}
@@ -133,7 +133,7 @@ export default function ServiceManager() {
                             type="submit"
                             disabled={isLoading}
                             className={`w-full py-3 rounded-xl font-bold text-white shadow-md transition-all flex items-center justify-center gap-2 ${
-                                isEditing ? 'bg-amber-500 hover:bg-amber-600' : 'bg-slate-900 hover:bg-slate-800'
+                                isEditing ? 'bg-amber-700 hover:bg-amber-800' : 'bg-slate-900 hover:bg-slate-800'
                             }`}
                         >
                             {isLoading ? 'Enregistrement...' : isEditing ? <><Save size={18}/> Mettre à jour</> : <><Plus size={18}/> Créer la prestation</>}
@@ -156,16 +156,16 @@ export default function ServiceManager() {
                                 </div>
                             </div>
                         </div>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => startEdit(service)} className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg">
+                        <div className="flex gap-1">
+                            <button type="button" aria-label={`Modifier ${service.name}`} onClick={() => startEdit(service)} className="p-2 text-slate-700 hover:text-amber-800 hover:bg-amber-50 rounded-lg">
                                 <Edit2 size={16} />
                             </button>
-                            <button onClick={async () => {
+                            <button type="button" onClick={async () => {
                                 if(confirm("Supprimer ?")) {
                                     await fetch(`/api/services?id=${service.id}`, { method: 'DELETE', credentials: 'include' });
                                     fetchServices();
                                 }
-                            }} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg">
+                            }} aria-label={`Supprimer ${service.name}`} className="p-2 text-slate-700 hover:text-rose-700 hover:bg-rose-50 rounded-lg">
                                 <Trash2 size={16} />
                             </button>
                         </div>

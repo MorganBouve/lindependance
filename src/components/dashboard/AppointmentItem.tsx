@@ -36,7 +36,8 @@ export function AppointmentItem({ event, onCheckout }: { event: CheckoutAppointm
                             e.stopPropagation(); // Empêche le double clic avec la div parente
                             onCheckout(event);
                         }}
-                        className="flex items-center gap-1.5 bg-studio-primary text-white px-4 py-2 rounded-xl text-xs font-bold hover:scale-105 transition-transform shadow-sm"
+                        type="button"
+                        className="flex items-center gap-1.5 bg-studio-action text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-studio-action-hover transition-colors shadow-sm"
                     >
                         <CreditCard size={14} /> Encaisser
                     </button>

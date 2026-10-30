@@ -129,7 +129,12 @@ client doit d'abord être créé par le staff.
      si le code n'arrive pas, avec ses coordonnées publiques configurées.
   2. Le client saisit le code dans un champ `autocomplete="one-time-code"`
      (autoremplissage best-effort selon navigateur/appareil ; l'API WebOTP ne
-     s'applique pas aux emails).
+     s'applique pas aux emails). Si le code est incorrect, expiré ou déjà
+     utilisé, un message explicite en français apparaît juste sous le champ et
+     lui est associé pour les technologies d'assistance.
+     La touche Entrée dans le champ déclenche uniquement l'action du formulaire
+     actif : demander un code à l'étape email, puis vérifier le code à l'étape
+     OTP.
   3. Après vérification atomique du code, il est consommé une seule fois et le
      client est authentifié pour le groupe de fiches auquel l'email vérifié est
      associé dans cette organisation.

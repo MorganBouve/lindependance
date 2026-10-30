@@ -63,7 +63,7 @@ export default function Sidebar() {
                 <IssueReportMenuButton />
             </nav>
 
-            <button onClick={() => signOut({ callbackUrl: '/auth/signin' })} className="flex items-center gap-3 px-6 py-6 mt-4 text-(--studio-muted) hover:text-red-400 transition-colors">
+            <button type="button" onClick={() => signOut({ callbackUrl: '/auth/signin' })} className="flex items-center gap-3 px-6 py-6 mt-4 text-studio-text hover:text-red-700 transition-colors">
                 <LogOut size={18} />
                 <span className="text-xs font-bold uppercase tracking-widest">Quitter</span>
             </button>

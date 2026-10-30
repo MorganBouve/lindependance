@@ -8,6 +8,8 @@
   --color-studio-primary: #D4A3A1;
   --color-studio-accent: #EAE3E1;
   --color-studio-border: #EAE3E1;
+  --color-studio-action: #74403D;
+  --color-studio-action-hover: #5B302E;
   --font-sans: var(--font-manrope);
   --font-serif: var(--font-noto-serif);
   /* Couleurs atelier-* : définies ici pour Tailwind v4 (@theme CSS-first).
@@ -27,6 +29,10 @@
   button:focus-visible {
     outline: 2px solid var(--color-studio-text);
     outline-offset: 2px;
+  }
+
+  button {
+    border: 1px solid currentColor;
   }
 
   button:not(:disabled):not([aria-disabled="true"]):not([aria-busy="true"]):active {

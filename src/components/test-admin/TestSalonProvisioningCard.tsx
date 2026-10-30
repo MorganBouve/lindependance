@@ -121,7 +121,7 @@ export default function TestSalonProvisioningCard() {
         <button
           type="submit"
           disabled={creating || salon !== null || !staffEmail.trim() || !confirmControlledEmail}
-          className="rounded-2xl bg-studio-primary px-5 py-3 text-sm font-semibold text-studio-text transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
+          className="rounded-2xl bg-studio-action px-5 py-3 text-sm font-semibold text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-60"
         >
           {creating ? 'Création en cours…' : 'Créer le salon et envoyer l’activation'}
         </button>

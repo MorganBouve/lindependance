@@ -44,12 +44,11 @@ export default function ForgotPasswordPage() {
         <label className="block mb-2">Email</label>
         <input className="w-full p-2 mb-4 border rounded" value={email} onChange={(e) => setEmail(e.target.value)} type="email" />
 
-        <button disabled={loading || ok} className="w-full py-2 rounded bg-studio-primary text-white font-bold">{loading ? 'Envoi...' : 'Envoyer le lien'}</button>
+        <button type="submit" disabled={loading || ok} className="w-full py-2 rounded bg-studio-action text-white font-bold">{loading ? 'Envoi...' : 'Envoyer le lien'}</button>
 
         <button type="button" onClick={() => router.push('/auth/signin')} className="w-full mt-3 py-2 rounded border border-gray-200 text-sm">Retour à la connexion</button>
       </form>
     </div>
   )
 }
-
 

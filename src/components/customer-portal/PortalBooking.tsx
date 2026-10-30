@@ -52,6 +52,7 @@ export default function PortalBooking({
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [authError, setAuthError] = useState('')
 
   const basePath = useMemo(
     () => `/api/portail/${encodeURIComponent(organizationSlug)}`,
@@ -155,7 +156,7 @@ export default function PortalBooking({
 
   async function requestCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setError('')
+    setAuthError('')
     try {
       const response = await fetch('/api/portail/auth/request-code', {
         method: 'POST',
@@ -165,13 +166,13 @@ export default function PortalBooking({
       if (!response.ok) throw new Error(await readError(response, 'Impossible de demander un code.'))
       setCodeRequested(true)
     } catch (requestError: unknown) {
-      setError(requestError instanceof Error ? requestError.message : 'Impossible de demander un code.')
+      setAuthError(requestError instanceof Error ? requestError.message : 'Impossible de demander un code.')
     }
   }
 
   async function verifyCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setError('')
+    setAuthError('')
     try {
       const response = await fetch('/api/portail/auth/verify-code', {
         method: 'POST',
@@ -179,7 +180,13 @@ export default function PortalBooking({
         credentials: 'include',
         body: JSON.stringify({ organizationSlug, email, code }),
       })
-      if (!response.ok) throw new Error(await readError(response, 'Code invalide ou expiré.'))
+      if (!response.ok) {
+        const message = await readError(response, 'Impossible de vérifier le code.')
+        if (message.toLowerCase().includes('invalid or expired code')) {
+          throw new Error('Le code saisi est invalide, expiré ou déjà utilisé. Vérifiez-le ou demandez-en un nouveau.')
+        }
+        throw new Error(message)
+      }
       const loadedCustomers = await fetchCustomers()
       if (loadedCustomers !== null) {
         setCustomers(loadedCustomers)
@@ -188,10 +195,10 @@ export default function PortalBooking({
       const hasCustomers = Boolean(loadedCustomers?.length)
       setAuthenticated(hasCustomers)
       if (!hasCustomers) {
-        setError('Impossible de vérifier votre code. Réessayez ou contactez le salon.')
+        setAuthError('Impossible de vérifier votre code. Réessayez ou contactez le salon.')
       }
     } catch (verificationError: unknown) {
-      setError(verificationError instanceof Error ? verificationError.message : 'Impossible de vérifier le code.')
+      setAuthError(verificationError instanceof Error ? verificationError.message : 'Impossible de vérifier le code.')
     }
   }
 
@@ -335,24 +342,62 @@ export default function PortalBooking({
                 </p>
                 <form onSubmit={codeRequested ? verifyCode : requestCode} className="space-y-3">
                   {!codeRequested && (
-                    <label className="block text-sm font-medium">
+                    <label htmlFor="portal-email" className="block text-sm font-medium">
                       Email enregistré sur votre fiche client
-                      <input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} className="mt-1 block w-full rounded-lg border border-gray-300 p-3" />
+                      <input
+                        id="portal-email"
+                        type="email"
+                        autoComplete="email"
+                        required
+                        value={email}
+                        onChange={(event) => {
+                          setEmail(event.target.value)
+                          setAuthError('')
+                        }}
+                        aria-invalid={Boolean(authError)}
+                        aria-describedby={authError ? 'portal-email-error' : undefined}
+                        className="mt-1 block w-full rounded-lg border border-gray-300 p-3"
+                      />
                     </label>
+                  )}
+                  {!codeRequested && authError && (
+                    <p id="portal-email-error" role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
+                      {authError}
+                    </p>
                   )}
                   {codeRequested && (
                     <>
                       <p className="text-sm text-gray-600">Si cet email correspond à une fiche client, un code à 6 chiffres lui a été envoyé.</p>
-                      <label className="block text-sm font-medium">
+                      <label htmlFor="portal-code" className="block text-sm font-medium">
                         Code de vérification
-                        <input inputMode="numeric" autoComplete="one-time-code" pattern="[0-9]{6}" maxLength={6} required value={code} onChange={(event) => setCode(event.target.value)} className="mt-1 block w-full rounded-lg border border-gray-300 p-3" />
+                        <input
+                          id="portal-code"
+                          inputMode="numeric"
+                          autoComplete="one-time-code"
+                          pattern="[0-9]{6}"
+                          maxLength={6}
+                          required
+                          value={code}
+                          onChange={(event) => {
+                            setCode(event.target.value)
+                            setAuthError('')
+                          }}
+                          aria-invalid={Boolean(authError)}
+                          aria-describedby={authError ? 'portal-code-error' : undefined}
+                          className="mt-1 block w-full rounded-lg border border-gray-300 p-3"
+                        />
                       </label>
+                      {authError && (
+                        <p id="portal-code-error" role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">
+                          {authError}
+                        </p>
+                      )}
                       <button
                         type="button"
                         onClick={() => {
                           setCodeRequested(false)
                           setCode('')
-                          setError('')
+                          setAuthError('')
                         }}
                         className="text-sm text-indigo-700 underline"
                       >
@@ -360,7 +405,7 @@ export default function PortalBooking({
                       </button>
                     </>
                   )}
-                  <button className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white">
+                  <button type="submit" className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white">
                     {codeRequested ? 'Vérifier le code' : 'Recevoir un code'}
                   </button>
                 </form>

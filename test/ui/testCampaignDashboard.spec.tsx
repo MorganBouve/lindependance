@@ -79,8 +79,8 @@ describe('TestCampaignDashboard', () => {
       name: 'Créer la campagne',
     })
     expect(desktopCreateButton.parentElement).toHaveClass('hidden', 'md:flex')
-    expect(desktopCreateButton).toHaveClass('bg-studio-primary', 'text-white')
-    expect(mobileCreateButton).toHaveClass('w-full', 'md:hidden', 'bg-studio-primary', 'text-white')
+    expect(desktopCreateButton).toHaveClass('bg-studio-action', 'text-white')
+    expect(mobileCreateButton).toHaveClass('w-full', 'md:hidden', 'bg-studio-action', 'text-white')
     expect(mobileCreateButton).not.toHaveClass('fixed')
     expect(mobileCreateButton).not.toHaveClass('z-50')
     expect(mobileCreateButton.parentElement).toHaveClass('grid')

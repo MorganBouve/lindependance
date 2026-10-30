@@ -57,12 +57,10 @@ export default function SignInPage() {
           </button>
         </div>
         <div className="mb-4 text-right">
-          <Link href="/auth/forgot-password" className="text-sm text-studio-primary hover:underline">Mot de passe oublié ?</Link>
+          <Link href="/auth/forgot-password" className="text-sm text-studio-action hover:text-studio-action-hover hover:underline">Mot de passe oublié ?</Link>
         </div>
-        <button className="w-full py-2 rounded bg-studio-primary text-white font-bold">Se connecter</button>
+        <button type="submit" className="w-full py-2 rounded bg-studio-action text-white font-bold">Se connecter</button>
       </form>
     </div>
   )
 }
-
-

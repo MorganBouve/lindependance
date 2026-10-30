@@ -53,19 +53,30 @@ date : `________` · navigateur/appareil : `________` · organisation : `_______
 
 ### Accès, périmètre et notifications
 
-#### [ ] ADM-01 — Voir uniquement les demandes de votre salon
+#### [x] ADM-01 — Voir uniquement les demandes de votre salon
 **Priorité : P0 · Exigence :** [Req: formal — `customer-portal.md`, sécurité et `customer-portal-phase-3.md`]
 
-**Étapes :** connectez-vous à l'espace de gestion de votre salon et ouvrez la
-liste des demandes de changement.
+**Étapes :** dans le champ du mot de passe, appuyez sur Entrée pour vous
+connecter à l'espace de gestion de votre salon, puis ouvrez la liste des
+demandes de changement.
 
-**Attendu :** seules les demandes concernant votre salon sont visibles.
-L'espace de gestion n'est pas accessible depuis un compte client.
+**Attendu :** la touche Entrée lance la connexion du formulaire actif. Seules
+les demandes concernant votre salon sont visibles. L'espace de gestion n'est
+pas accessible depuis un compte client.
 
 **Automatisé :** `test/api/appointment-change-requests.spec.ts`,
 `test/api/appointment-portal-count.spec.ts`,
 `test/proxy.portal.spec.ts`.
-**Résultat / preuve :** BLOQUÉ — compte staff connecté sur Osez l'Etre, sans compte staff disponible pour le second salon de test ni demandes prêtes dans les deux organisations. Le cloisonnement staff n'est pas validé.
+**Résultat / preuve :** PASS — 28/10/2026 en préproduction, deux demandes QA
+ont été créées dans deux salons distincts. Le compte staff du Salon recette
+réel n'a affiché que sa demande ; le compte staff d'Osez l'Etre n'a affiché
+que la sienne. Les suites
+`test/api/appointment-change-requests.spec.ts`,
+`test/api/appointment-portal-count.spec.ts`, `test/proxy.portal.spec.ts` et
+`test/services/customerPortalChangeRequests.spec.ts` passent aussi (40 tests).
+Les deux demandes ont été refusées pour nettoyage ; les quatre rendez-vous QA
+temporaires ont été supprimés, les adresses de recette retirées des deux
+fiches client, et les deux portails ne montrent plus de rendez-vous à venir.
 
 #### [ ] ADM-02 — Suivre les réservations et demandes
 **Priorité : P1 · Exigence :** [Req: formal — `customer-portal-phase-3.md`, DoD 7]
@@ -268,7 +279,8 @@ personnelle. Demandez à l'équipe technique de sélectionner `ORG-A` et `ORG-B`
 dans son menu, de filtrer les signalements non résolus, d'ouvrir les campagnes
 de test puis de revenir aux signalements pour en marquer un comme résolu.
 
-**Attendu :** les commentaires et boutons restent lisibles. Si l'horaire n'est
+**Attendu :** les commentaires restent lisibles et les boutons se distinguent
+nettement du fond. Si l'horaire n'est
 plus disponible, un message clair s'affiche et la demande reste visible tant
 qu'elle n'a pas été traitée. Le formulaire confirme l'envoi. L'équipe technique
 retrouve les signalements non résolus (`Nouveau` et `En cours`) dans les deux
@@ -577,7 +589,7 @@ e-mail n'a été créé. Aucun test n'a été effectué en production.
 Après cette vérification, le portail a été configuré et activé séparément pour
 la recette client ; voir CUS-01, CUS-02, CUS-05, CUS-06, CUS-08 et CUS-10.
 
-#### [ ] ADM-26 — Vérifier qu'un rendez-vous annulé disparaît de l'agenda
+#### [x] ADM-26 — Vérifier qu'un rendez-vous annulé disparaît de l'agenda
 **Priorité : P1 · Exigence :** [Req: formal — `customer-portal-phase-2.md`, DoD 8]
 
 **Étapes :** après qu'un client a annulé un rendez-vous de test futur depuis son
@@ -590,11 +602,11 @@ actualisation. Les autres rendez-vous restent visibles.
 **Automatisé :** `test/api/get.routes.spec.ts` vérifie que le chargement de
 l'agenda exclut les rendez-vous annulés. Le contrôle visuel a été effectué en
 préproduction le 28/10 après la fusion du correctif.
-**Résultat / preuve :** PARTIEL — après actualisation de l'agenda d'Osez l'Etre,
-le rendez-vous QA annulé prévu le 29/10 à 14 h n'apparaissait plus dans la
-semaine du 26/10 au 01/11. Aucun rendez-vous actif n'était visible après
-actualisation ; la vérification que les autres rendez-vous restent visibles
-reste à faire sans créer de nouvelle donnée de test.
+**Résultat / preuve :** PASS — après actualisation de l'agenda d'Osez l'Etre,
+le rendez-vous QA annulé prévu le 29/10 à 14 h restait absent de la semaine du
+26/10 au 01/11. Un rendez-vous QA actif confirmé, prévu le 29/10 de 09 h à
+09 h 30, est resté visible après actualisation. Il a ensuite été supprimé par
+le staff ; son absence a été vérifiée dans l'agenda et le portail client.
 
 ## Couverture automatisée relue
 

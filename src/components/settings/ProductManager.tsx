@@ -220,7 +220,7 @@ export default function ProductManager() {
           </h2>
           <div className="flex items-center gap-2">
             {isEditing && (
-              <button onClick={cancelEdit} className="text-slate-400 hover:text-slate-600 flex items-center gap-1 text-sm">
+              <button onClick={cancelEdit} className="text-slate-700 hover:text-slate-900 flex items-center gap-1 text-sm">
                 <X size={16} /> Annuler
               </button>
             )}
@@ -247,8 +247,8 @@ export default function ProductManager() {
                     title={opt.label}
                     className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border-2 transition-all w-16 ${
                       isSelected
-                        ? 'border-rose-400 bg-rose-50 text-rose-600'
-                        : 'border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-600'
+                        ? 'border-rose-600 bg-rose-50 text-rose-700'
+                        : 'border-slate-300 bg-white text-slate-700 hover:border-rose-500 hover:text-rose-700'
                     }`}
                   >
                     <Icon size={18} />
@@ -351,7 +351,7 @@ export default function ProductManager() {
             <button
               type="submit"
               disabled={isLoading}
-              className="flex items-center gap-2 px-5 py-2.5 bg-rose-500 text-white rounded-xl hover:bg-rose-600 disabled:opacity-50 transition-colors"
+              className="flex items-center gap-2 px-5 py-2.5 bg-rose-700 text-white rounded-xl hover:bg-rose-800 disabled:opacity-50 transition-colors"
             >
               <Save size={16} />
               {isLoading ? 'Enregistrement...' : isEditing ? 'Mettre à jour' : 'Ajouter'}
@@ -376,7 +376,7 @@ export default function ProductManager() {
         </div>
         <div className="flex items-center gap-2">
           {query && (
-            <button onClick={() => setQuery('')} className="text-sm text-slate-500">Effacer</button>
+            <button type="button" onClick={() => setQuery('')} className="text-sm text-slate-700">Effacer</button>
           )}
           <button
             type="button"
@@ -437,6 +437,7 @@ export default function ProductManager() {
               </div>
               <div className="flex flex-wrap items-center justify-end gap-1 shrink-0">
                 <button
+                  type="button"
                   onClick={() => openStockDialog(product)}
                   aria-label={`Ajouter un mouvement de stock pour ${product.name}`}
                   className="p-2 text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
@@ -444,6 +445,7 @@ export default function ProductManager() {
                   <Plus size={16} />
                 </button>
                 <button
+                  type="button"
                   onClick={() => { void openHistory(product) }}
                   aria-label={`Voir l’historique du stock de ${product.name}`}
                   className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"
@@ -451,16 +453,18 @@ export default function ProductManager() {
                   <History size={16} />
                 </button>
                 <button
+                  type="button"
                   onClick={() => startEdit(product)}
                   aria-label={`Modifier ${product.name}`}
-                  className="p-2 text-slate-400 hover:text-amber-500 hover:bg-amber-50 rounded-lg"
+                  className="p-2 text-slate-700 hover:text-amber-800 hover:bg-amber-50 rounded-lg"
                 >
                   <Edit2 size={16} />
                 </button>
                 <button
+                  type="button"
                   onClick={() => { void handleDelete(product.id) }}
                   aria-label={`Supprimer ${product.name}`}
-                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg"
+                  className="p-2 text-slate-700 hover:text-rose-700 hover:bg-rose-50 rounded-lg"
                 >
                   <Trash2 size={16} />
                 </button>
@@ -480,7 +484,7 @@ export default function ProductManager() {
                   {stockDialogProduct.name} — stock actuel : {stockDialogProduct.stock}
                 </p>
               </div>
-              <button type="button" onClick={() => setStockDialogProduct(null)} aria-label="Fermer" className="rounded-lg p-2 text-slate-400 hover:bg-slate-100">
+              <button type="button" onClick={() => setStockDialogProduct(null)} aria-label="Fermer" className="rounded-lg p-2 text-slate-700 hover:bg-slate-100">
                 <X size={18} />
               </button>
             </div>
@@ -532,7 +536,7 @@ export default function ProductManager() {
                 <button type="button" onClick={() => setStockDialogProduct(null)} className="rounded-xl border px-4 py-2 text-sm text-slate-600">
                   Annuler
                 </button>
-                <button type="submit" disabled={isSavingMovement} className="rounded-xl bg-rose-500 px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
+                <button type="submit" disabled={isSavingMovement} className="rounded-xl bg-rose-700 px-4 py-2 text-sm font-medium text-white hover:bg-rose-800 disabled:opacity-50">
                   {isSavingMovement ? 'Enregistrement...' : 'Enregistrer'}
                 </button>
               </div>
@@ -549,7 +553,7 @@ export default function ProductManager() {
                 <h2 id="stock-history-title" className="text-lg font-bold text-slate-800">Historique du stock</h2>
                 <p className="mt-1 text-sm text-slate-500">{historyProduct.name}</p>
               </div>
-              <button type="button" onClick={() => setHistoryProduct(null)} aria-label="Fermer" className="rounded-lg p-2 text-slate-400 hover:bg-slate-100">
+              <button type="button" onClick={() => setHistoryProduct(null)} aria-label="Fermer" className="rounded-lg p-2 text-slate-700 hover:bg-slate-100">
                 <X size={18} />
               </button>
             </div>
@@ -582,4 +586,3 @@ export default function ProductManager() {
     </div>
   )
 }
-

@@ -38,7 +38,8 @@ Voir `.env.example` pour le détail. Résumé :
 | `DIRECT_URL` | oui (Prisma) | Connexion directe (hors pooler) utilisée par les migrations Prisma |
 | `SHADOW_DATABASE_URL` | non | Requis seulement si tu utilises un Shadow DB pour `prisma migrate dev` |
 | `NEXTAUTH_SECRET` | **oui en production/CI** | Secret de signature des sessions Auth.js. Génère-le avec `openssl rand -hex 32`. Le build (`pnpm run prebuild` → `check-env`) échoue si absent en production/CI. |
-| `RESEND_API_KEY` | non | Envoi d'emails (ex. réinitialisation de mot de passe) via Resend, si utilisé |
+| `RESEND_API_KEY` | oui pour les e-mails du portail client | Envoi des codes OTP, confirmations et notifications du portail via Resend |
+| `RESEND_FROM` | oui en production | Adresse expéditrice autorisée dans Resend ; sans valeur, l'application utilise `no-reply@studio.test`, qui n'est pas adaptée à l'envoi en production |
 | `NEXT_PROXY_INJECTION_MODE` | non (défaut `A`) | Stratégie d'injection du header `x-org-id` par le proxy (`A` ou `B` — voir `README.md`) |
 | `TRUSTED_PROXY_IP` | non (auto-hébergement uniquement) | Active la lecture de `x-real-ip` pour les quotas IP ; à définir à `true` uniquement derrière un proxy qui remplace cet en-tête |
 

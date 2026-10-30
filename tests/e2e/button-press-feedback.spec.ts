@@ -3,6 +3,76 @@ import { expect, test } from '@playwright/test'
 test.describe('button press feedback', () => {
   test.use({ hasTouch: true })
 
+  test('submits the staff sign-in form when Enter is pressed in a credential field', async ({ page }) => {
+    await page.route('**/api/auth/callback/credentials**', (route) => route.fulfill({
+      status: 401,
+      contentType: 'application/json',
+      body: JSON.stringify({ error: 'CredentialsSignin' }),
+    }))
+    await page.goto('/auth/signin')
+
+    const password = page.locator('input[type="password"]')
+    await password.fill('password-example')
+    const signInRequest = page.waitForRequest((request) => (
+      request.method() === 'POST'
+      && request.url().includes('/api/auth/callback/credentials')
+    ))
+    await password.press('Enter')
+
+    expect(await signInRequest).toBeTruthy()
+  })
+
+  test('uses WCAG AA contrast for shared button color variants', async ({ page }) => {
+    await page.goto('/auth/signin')
+
+    const contrastRatios = await page.evaluate(() => {
+      function luminance(color: string): number {
+        const channels = color.match(/[\d.]+/g)?.slice(0, 3).map(Number)
+        if (!channels || channels.length !== 3) throw new Error(`Unexpected computed color: ${color}`)
+        const linear = channels.map((channel) => {
+          const value = channel / 255
+          return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+        })
+        return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+      }
+
+      const variants = [
+        { className: 'text-white', background: 'var(--color-studio-action)' },
+        { className: 'text-white', background: 'var(--color-studio-action-hover)' },
+        { className: 'bg-rose-700 text-white', background: null },
+        { className: 'bg-amber-700 text-white', background: null },
+        { className: 'text-red-700', background: '#FEF2F2' },
+        { className: 'text-rose-700', background: '#FFF1F2' },
+        { className: 'text-gray-700', background: '#F3F4F6' },
+        { className: 'text-slate-600', background: '#FFFFFF' },
+        { className: 'text-gray-600', background: '#F9FAFB' },
+        { className: 'text-studio-action', background: '#FFFFFF' },
+      ]
+
+      return variants.map(({ className, background }) => {
+        const button = document.createElement('button')
+        button.className = className
+        if (background) button.style.backgroundColor = background
+        document.body.append(button)
+        const styles = getComputedStyle(button)
+        const foreground = luminance(styles.color)
+        const backdrop = luminance(styles.backgroundColor)
+        button.remove()
+        const [lighter, darker] = foreground >= backdrop
+          ? [foreground, backdrop]
+          : [backdrop, foreground]
+        return (lighter + 0.05) / (darker + 0.05)
+      })
+    })
+
+    for (const ratio of contrastRatios) {
+      expect(ratio).toBeGreaterThanOrEqual(4.5)
+    }
+
+    await expect(page.getByRole('button', { name: 'Se connecter' }))
+      .toHaveCSS('border-top-style', 'solid')
+  })
+
   test('shows a pressed state on mouse interaction', async ({ page }) => {
     await page.goto('/auth/signin')
     const button = page.getByRole('button', { name: /mot de passe/ })

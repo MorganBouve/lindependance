@@ -15,11 +15,11 @@ describe('FloatingActionButton', () => {
     expect(onClick).toHaveBeenCalled()
   })
 
-  it('a un fallback backgroundColor inline (#C5908E)', () => {
+  it('a un fallback backgroundColor inline (#74403D)', () => {
     const { getByTestId } = render(<FloatingActionButton ariaLabel="Test" />)
     const btn = getByTestId('floating-quick-rdv')
-    // Le style inline garantit la couleur même si Tailwind v4 ne génère pas bg-atelier-primary
-    expect(btn).toHaveStyle({ backgroundColor: 'var(--color-atelier-primary, #C5908E)' })
+    // The fallback keeps the action color visible if its Tailwind utility is unavailable.
+    expect(btn).toHaveStyle({ backgroundColor: 'var(--color-studio-action, #74403D)' })
   })
 
   it('a un z-index maximal et pointer-events:auto', () => {
@@ -28,4 +28,3 @@ describe('FloatingActionButton', () => {
     expect(btn).toHaveStyle({ zIndex: '2147483647', pointerEvents: 'auto' })
   })
 })
-

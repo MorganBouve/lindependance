@@ -88,7 +88,7 @@ export default function CustomerModal({ isOpen, onCloseAction, onCreatedAction }
         </div>
 
         <div className="flex flex-col">
-          <button disabled={loading} className="w-full py-2 rounded bg-studio-primary text-white font-bold mb-2">
+          <button type="submit" disabled={loading} className="w-full py-2 rounded bg-studio-action text-white font-bold mb-2">
             {loading ? 'Enregistrement…' : 'Créer le client'}
           </button>
           <button type="button" onClick={() => { reset(); onCloseAction() }} className="w-full py-2 rounded border border-gray-200 text-sm">

@@ -160,7 +160,7 @@ export default function InitialOrganizationAdminCard() {
           <button
             type="submit"
             disabled={submitting || !selectedOrganizationId || !email.trim() || !confirmControlledEmail}
-            className="rounded-2xl bg-studio-primary px-5 py-3 text-sm font-semibold text-studio-text disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-2xl bg-studio-action px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting ? 'Création en cours…' : 'Créer le premier ADMIN et envoyer l’invitation'}
           </button>

@@ -83,7 +83,10 @@ doit être associée au salon Osez l'Etre par un `TECH_ADMIN` depuis
 `/tech-admin/portal-domains` après application de la migration. Le 26/10/2026,
 le lien direct `/portail/qa-salon-reel-20261026-1054-c8f24a/reserver` a aussi
 ouvert le nouveau salon de recette et affiché son nom et son contact public.
-Le domaine racine, le logo et l'apparence de ce nouveau salon restent à vérifier.
+Le 28/10, le lien direct sur le déploiement actuel affichait aussi le bon salon,
+sa prestation et son contact ; aucun logo n'était visible. L'alias stable
+`lindependance-testing.vercel.app` renvoie une 404. Le domaine racine, le logo
+et l'apparence de ce nouveau salon restent à vérifier.
 
 #### [x] CUS-02 — Choisir une prestation, un coiffeur, une date et un horaire
 **Priorité : P0 · Exigence :** [Req: formal — `customer-portal-phase-1.md`, parcours de réservation]
@@ -137,7 +140,7 @@ de fuseau et DST ; le parcours réel sur appareil reste à valider.
 
 ### Identification et identité client
 
-#### [ ] CUS-05 — Recevoir un code de connexion par e-mail
+#### [x] CUS-05 — Recevoir un code de connexion par e-mail
 **Priorité : P0 · Exigence :** [Req: formal — `customer-portal.md`, §2]
 
 **Étapes :** ouvrez la réservation sans session client. Avant de saisir une
@@ -156,31 +159,32 @@ change pas selon l'adresse saisie.
 **Automatisé :** `test/api/customer-portal-request-code.spec.ts`,
 `test/services/customerPortalEmail.spec.ts`,
 `test/domain/customer-portal/emailTemplates.spec.ts`.
-**Résultat / preuve :** PARTIEL — 26/10/2026 en préproduction, un code a
-permis de vérifier l'adresse du profil client du nouveau salon. Lors d'une
-nouvelle recette à 16 h 02, un code indépendant et un code de remplacement ont
-été reçus en moins de 2 minutes ; l'ancien a été refusé et le nouveau accepté.
-Le premier essai de la journée avait été retardé, sans que ce délai se
-reproduise. Le parcours d'un second salon et ses modèles d'e-mail restent à
-vérifier. Une demande a aussi été faite pour le second profil de recette ; la
-page a affiché la réponse générique, mais le testeur n'a pas reçu de code. Le
-profil staff contient une adresse enregistrée, sans que sa correspondance avec
-la boîte surveillée ait été confirmée. La consigne de premier rendez-vous est
-implémentée localement ; sa vérification manuelle en préproduction attend la
-publication.
+**Résultat / preuve :** PASS — 30/10/2026 en préproduction, la consigne de
+premier rendez-vous et les coordonnées publiques sont visibles avant la saisie
+de l'adresse sur les deux portails. Après une demande de code, le message
+affiché reste générique et ne révèle pas si l'adresse correspond à une fiche
+client. Les deux modèles étaient initialement identiques ; le message du Salon
+recette réel a été temporairement personnalisé avec le nom du salon et
+`{{code}}`. Son e-mail a été reçu et le code accepté. Osez l'Être a envoyé son
+message par défaut et le code a également été accepté. Le réglage initial du
+Salon recette réel a été restauré et vérifié après le test. Aucun code ni
+adresse n'est consigné.
 
 #### [x] CUS-06 — Utiliser le code de connexion
 **Priorité : P0 · Exigence :** [Req: formal — `customer-portal.md`, §2 et sécurité]
 
-**Étapes :** connectez-vous avec le code reçu par e-mail. Si vous demandez un
-nouveau code, essayez ensuite l'ancien code.
+**Étapes :** connectez-vous avec le code reçu par e-mail en appuyant sur
+Entrée dans le champ du code. Essayez aussi un code incorrect ou réutilisez
+l'ancien après avoir demandé un nouveau code.
 
-**Attendu :** le code reçu vous permet d'ouvrir votre espace client. Un ancien
-code ou un code incorrect ne permet pas de se connecter ; le message explique
-comment demander un nouveau code.
+**Attendu :** le code reçu vous permet d'ouvrir votre espace client. Un code
+incorrect, expiré ou déjà utilisé ne permet pas de se connecter ; une erreur
+claire apparaît juste sous le champ et explique comment demander un nouveau
+code.
 
 **Automatisé :** `test/api/customer-portal-verify-code.spec.ts` couvre les
-codes invalides/consommés/expirés ; `test/domain/customer-portal/rateLimit.spec.ts`
+codes invalides/consommés/expirés ; `test/ui/portalBooking.spec.tsx` vérifie
+l'erreur près du champ et `test/domain/customer-portal/rateLimit.spec.ts`
 couvre la fenêtre glissante. Le renvoi et la vérification réelle ont aussi été
 testés en préproduction ; les quotas par IP restent à vérifier.
 **Résultat / preuve :** PASS — 26/10/2026 en préproduction, le code initial a
@@ -309,7 +313,7 @@ s'affichent dans l'ordre chronologique. Dans le portail du salon de test, aucun
 rendez-vous d'Osez l'Etre n'apparaît ; la vérification d'e-mail est demandée,
 y compris après actualisation. Campagne « Test Création de rdv 1 », 20/10/2026.
 
-#### [ ] CUS-12 — Annuler un rendez-vous
+#### [x] CUS-12 — Annuler un rendez-vous
 **Priorité : P0 · Exigence :** [Req: formal — `customer-portal-phase-2.md`, DoD 3–5]
 
 **Étapes :** annulez `RDV-FAR`, qui n'est pas payé et est prévu dans plus d'un
@@ -334,14 +338,19 @@ salon. Le nombre de séances du forfait associé, s'il y en a un, ne change pas.
 `test/api/customer-portal-appointments.spec.ts`,
 `test/services/appointmentCancellationNotification.spec.ts`,
 `test/services/customerPortalEmail.spec.ts`.
-**Résultat / preuve :** PARTIEL — 22/10/2026 en préproduction, le rendez-vous
-non payé prévu à moins de 24 h et celui payé prévu à plus d'un jour ne
-proposaient pas « Annuler » et invitaient à contacter le salon. Des rendez-vous
-QA non payés ont été annulés depuis le portail ; ils ont disparu des fenêtres
-client et leurs créneaux ont été libérés. Le 28/10, l'utilisateur a confirmé
-la réception de l'e-mail d'annulation et le retrait du même événement par la
-pièce jointe calendrier. Aucun forfait n'était associé. L'absence d'e-mail
-pour les demandes d'annulation refusées n'a pas été vérifiée séparément.
+**Résultat / preuve :** PASS — 22/10/2026 en préproduction, le rendez-vous
+payé prévu à plus d'un jour ne proposait pas « Annuler » et invitait à
+contacter le salon. Des rendez-vous QA non payés ont été annulés depuis le
+portail ; ils ont disparu des fenêtres client et leurs créneaux ont été
+libérés. Le 28/10, l'utilisateur a confirmé la réception de l'e-mail
+d'annulation et le retrait du même événement par la pièce jointe calendrier.
+Le même jour, un rendez-vous QA non payé prévu à moins de 24 h affichait le
+message « Contactez votre établissement pour modifier ou annuler ce
+rendez-vous », sans action « Annuler » ; l'utilisateur a confirmé qu'aucun
+e-mail d'annulation n'avait été reçu après ce refus. Le rendez-vous test a
+ensuite été supprimé par le staff et son absence confirmée dans le portail.
+L'utilisateur a reçu un e-mail d'annulation distinct après cette suppression.
+Aucun forfait n'était associé.
 
 ### Demande de changement de créneau — Phase 3
 
@@ -428,7 +437,9 @@ vos rendez-vous et essayez de demander un changement. Ouvrez aussi « Signaler
 un problème », lisez les informations transmises, puis envoyez un signalement
 de test sans donnée personnelle.
 
-**Attendu :** les boutons et les messages sont faciles à lire et à utiliser.
+**Attendu :** les boutons et les messages restent faciles à lire et à utiliser
+sur téléphone ; les actions se distinguent nettement du fond et le focus
+clavier reste visible.
 Vous comprenez si le rendez-vous est confirmé, si le salon doit répondre ou
 s'il faut le contacter. Le formulaire précise les informations techniques
 jointes et confirme l'envoi ; l'équipe technique retrouve le signalement dans
