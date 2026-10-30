@@ -38,7 +38,7 @@ const PaymentMethodBtn = ({ id, label, icon: Icon, active, disabled, onClick }: 
         disabled={disabled}
         onClick={() => onClick(id)}
         className={`flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all ${
-            active ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100' : 'bg-white border-gray-100 text-gray-400 hover:border-indigo-200'
+            active ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100' : 'bg-white border-gray-500 text-gray-700 hover:border-indigo-600'
         } ${disabled && !active ? 'opacity-20' : ''}`}
     >
         <Icon size={20} />
@@ -76,7 +76,7 @@ const ExtraRow = ({ extra, index, isPaid, canEdit, onUpdate, onRemove }: ExtraRo
             <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400">€</span>
         </div>
         {!isPaid && canEdit && (
-            <button onClick={() => onRemove(index)} className="p-2 text-red-300 hover:text-red-500 rounded-xl transition-all">
+            <button onClick={() => onRemove(index)} className="p-2 text-red-700 hover:text-red-900 rounded-xl transition-all">
                 <Trash2 size={16} />
             </button>
         )}
@@ -376,7 +376,7 @@ export default function CheckoutModal({ appointment, onClose, onRefresh }: Check
                                 )}
                                 <span className="text-xs font-bold text-gray-700 w-16 text-right">{p.totalTTC.toFixed(2)} €</span>
                                 {!isPaid && !isCancelled && (
-                                    <button onClick={() => removeProduct(i)} className="p-1 text-red-300 hover:text-red-500 transition-colors">
+                                    <button onClick={() => removeProduct(i)} className="p-1 text-red-700 hover:text-red-900 transition-colors">
                                         <X size={13} />
                                     </button>
                                 )}
@@ -463,7 +463,7 @@ export default function CheckoutModal({ appointment, onClose, onRefresh }: Check
                             <button
                                 onClick={() => setShowDeleteConfirm(true)}
                                 disabled={deleteLoading}
-                                className="flex-1 py-3 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 bg-white border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50"
+                                className="flex-1 py-3 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 bg-white border border-red-600 text-red-700 hover:bg-red-50 disabled:opacity-50"
                             >
                                 <Trash2 size={18} /> Supprimer le RDV
                             </button>

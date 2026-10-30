@@ -55,7 +55,7 @@ describe('TestSalonProvisioningCard', () => {
 
     const createButton = screen.getByRole('button', { name: 'Créer le salon et envoyer l’activation' })
     expect(createButton).toBeDisabled()
-    expect(createButton).toHaveClass('bg-studio-primary', 'text-studio-text')
+    expect(createButton).toHaveClass('bg-studio-action', 'text-white')
     fireEvent.change(screen.getByLabelText('Adresse e-mail du compte staff'), {
       target: { value: 'staff@example.test' },
     })

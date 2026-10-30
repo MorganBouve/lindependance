@@ -25,9 +25,9 @@ production.
 
 ## Tableau de suivi
 
-| Contrôle | Environnement | Priorité | État au 28/10/2026 | Dernière exécution / preuve | Critère de sortie |
+| Contrôle | Environnement | Priorité | État au 30/10/2026 | Dernière exécution / preuve | Critère de sortie |
 |---|---|---:|---|---|---|
-| Livraison et renouvellement du code e-mail | Préproduction | Bloquant | PASS | 26/10 — sur le profil initial, codes indépendant et de remplacement reçus en moins de 2 min ; ancien refusé, nouveau accepté. 27/10 — après confirmation que l'adresse du second profil correspond à la boîte surveillée et vérification des indésirables, un nouveau code est arrivé et a permis l'authentification. | Le code arrive de façon répétable ; un code expiré ou remplacé est refusé et le dernier code valide permet la connexion. |
+| Livraison et renouvellement du code e-mail | Préproduction | Bloquant | PASS | 26/10 — sur le profil initial, codes indépendant et de remplacement reçus en moins de 2 min ; ancien refusé, nouveau accepté. 27/10 — après confirmation que l'adresse du second profil correspond à la boîte surveillée et vérification des indésirables, un nouveau code est arrivé et a permis l'authentification. 30/10 — CUS-05 : modèles OTP personnalisé et par défaut reçus dans les deux organisations ; codes acceptés. Le modèle temporaire du Salon recette réel a été restauré après le test. | Le code arrive de façon répétable ; un code expiré ou remplacé est refusé et le dernier code valide permet la connexion. |
 | Information pour un premier rendez-vous | Préproduction | Important | PASS | 26/10 — après actualisation du portail sans session, la consigne apparaît avant le champ e-mail ; le contact téléphonique du salon est visible. | La consigne est visible sans session, indique d'appeler si un téléphone est configuré et reste indépendante de l'adresse saisie. |
 | Deux clients réservent le même créneau | Préproduction | Bloquant | PASS | 27/10 — deux comptes distincts ont soumis presque simultanément le service de test du 27/10 à 15 h 30 chez le même praticien ; un rendez-vous confirmé, l'autre refusé (« créneau plus disponible »). L'agenda staff n'affichait qu'un rendez-vous ; l'autre compte n'en affichait aucun. Le rendez-vous de recette a été supprimé et les deux portails vérifiés sans rendez-vous à venir. | Une seule réservation est confirmée ; l'autre reçoit un refus clair et le créneau n'est pas dupliqué dans l'agenda. |
 | Même client, même créneau, deux praticiens | Préproduction | Bloquant | PASS | 27/10 — deux sessions du même compte client ont soumis le même service, la même date et 15 h 30 avec Morgan Bouve et Praticien Recette ; une réservation confirmée, l'autre refusée (« cette fiche client a déjà un rendez-vous sur ce créneau »). Un seul rendez-vous figurait dans l'agenda. Il a été supprimé et les deux sessions client vérifiées sans rendez-vous à venir. Le praticien fictif ajouté pour le test a ensuite été désactivé. | Une seule réservation du même client est possible sur le même horaire, même si deux praticiens distincts sont choisis simultanément. |
@@ -35,9 +35,16 @@ production.
 | Limite de réservation à 60 jours | Préproduction | Important | PASS | 27/10 — le calendrier accepte le 26/12 (60 jours après le 27/10) et affiche des créneaux ; le 27/12 affiche « Date hors de la période de réservation » et est invalide. Les 26 tests de domaine, service et API ciblés passent. Aucun rendez-vous n'a été conservé pour ce contrôle. | La borne exacte est sélectionnable ; toute date ultérieure est refusée côté calendrier et API. |
 | Import de l'invitation calendrier | Préproduction | Important | PASS | 27/10 — l'utilisateur a importé l'invitation de recette et confirmé les bons salon, prestation, praticien et horaire (26/12/2026, 09:00–09:30). Le rendez-vous est apparu une seule fois dans le portail et l'agenda staff ; il a été supprimé après vérification, puis son absence a été confirmée dans les deux interfaces. | L'événement importé a le bon salon, service, praticien et horaire, sans créer de réservation supplémentaire. |
 | Confirmation e-mail dans deux organisations | Préproduction | Important | PASS | 26–27/10 — l'e-mail et l'invitation du salon de recette ont été reçus et vérifiés. Pour Osez l'Etre, l'utilisateur a confirmé la réception du message par défaut avec le bon salon, la prestation, la date, l'horaire et le fuseau. Le rendez-vous test a été supprimé par le staff ; après actualisation, aucun rendez-vous à venir ne figurait dans le portail client. | Vérifier les deux messages dans une boîte contrôlée et autorisée, avec le bon salon, la prestation et l'horaire ; confirmer le texte par défaut de la seconde organisation. |
-| E-mail d'annulation et retrait calendrier | Préproduction | Important | PASS | 28/10 — l'utilisateur a confirmé la réception des e-mails après annulation par le client et suppression par le salon, ainsi que le retrait des événements via les pièces jointes calendrier. Le contrôle de l'affichage dans l'agenda après annulation est suivi séparément dans ADM-26. | Annuler un rendez-vous client et en supprimer un autre depuis l'agenda staff ; vérifier les deux messages et l'import de l'annulation `.ics` sur l'événement existant. |
+| Visibilité de l'agenda après annulation | Préproduction | Important | PASS | 28/10 — après actualisation, le rendez-vous QA annulé du 29/10 à 14 h restait absent et un rendez-vous QA actif du 29/10 à 09 h restait visible. Le rendez-vous créé pour ce contrôle a ensuite été supprimé ; son absence a été confirmée dans l'agenda et le portail client. | Les rendez-vous annulés sont masqués sans masquer les rendez-vous actifs. |
+| Cloisonnement inter-salon des demandes staff | Préproduction | Bloquant | PASS | 28/10 — deux demandes QA distinctes : le staff du Salon recette réel n'a vu que sa demande et le staff d'Osez l'Etre uniquement la sienne. Demandes refusées, rendez-vous temporaires supprimés et adresses e-mail de recette retirées des fiches ; agendas et portails vérifiés après nettoyage. | Chaque compte staff ne voit que les demandes de son organisation. |
+| E-mail d'annulation et retrait calendrier | Préproduction | Important | PASS | 28/10 — l'utilisateur a confirmé la réception des e-mails après annulation par le client et suppression par le salon, ainsi que le retrait des événements via les pièces jointes calendrier. Pour un rendez-vous QA non payé à moins de 24 h, le portail refusait l'annulation et l'utilisateur a confirmé qu'aucun e-mail d'annulation n'avait été reçu. | Annuler un rendez-vous client et en supprimer un autre depuis l'agenda staff ; vérifier les deux messages et l'import de l'annulation `.ics` sur l'événement existant ; confirmer l'absence d'e-mail lors d'une annulation refusée. |
+| Alias stable de préproduction | Préproduction | Important | BLOQUÉ | 28/10 — `https://lindependance-testing.vercel.app/` renvoie une 404 Vercel `DEPLOYMENT_NOT_FOUND` ; aucun rattachement distant n'a été modifié. | L'alias ouvre le déploiement Preview courant de `preprod` et suit ses mises à jour sans affecter Production. |
 | Domaine dédié et identité du nouveau salon | Préproduction | Bloquant pour l'ouverture publique | BLOQUÉ | 27/10 — aucun domaine dédié au salon de recette n'est disponible pour le test. `testing.osezletre.fr` est partagé et associé à Osez l'Etre ; cette association n'a pas été modifiée. | Le domaine choisi ouvre le bon salon, avec son identité, sans exposer les données d'un autre salon. |
 | Vérification de mise en production | Production | Bloquant | EN ATTENTE D'AUTORISATION | Aucun test de production réalisé. | Configuration validée puis smoke test contrôlé réussi et données de recette nettoyées. |
+
+**Précision du 28/10 :** l'absence d'e-mail après le refus client a été
+confirmée avant le nettoyage ; l'e-mail d'annulation reçu ensuite faisait
+suite à la suppression du rendez-vous test par le staff.
 
 Mettre à jour l'état, la date et la preuve expurgée après chaque exécution.
 Ne jamais consigner de code OTP, mot de passe, adresse e-mail personnelle ou
@@ -201,23 +208,106 @@ dédié au nouveau salon, configuré en préproduction par un TECH_ADMIN.
 isolation correctes. Si aucun domaine de test dédié n'est disponible, laisser
 ce contrôle BLOQUÉ plutôt que de repointer le domaine partagé.
 
-### 8. Vérifier la production après autorisation explicite
+### 8. Passage en production — plan opérationnel multi-outils
 
-Cette étape est conditionnelle. Ne pas la lancer avant accord explicite et
-confirmation par l'équipe qu'un compte, une boîte e-mail et un salon de recette
-en production sont autorisés.
+**État au 30/10/2026 :** les principaux parcours fonctionnels sont validés en
+préproduction. L'alias stable Preview est en panne, mais cela ne bloque pas à
+lui seul la production. La configuration de production, l'état de sa base et
+le smoke test n'ont pas encore été vérifiés. Aucun test ni changement de
+configuration n'a été effectué en production.
 
-1. Vérifier le déploiement, le domaine, les réglages e-mail et les migrations
-   avec l'équipe technique.
-2. Avec le compte de recette autorisé, vérifier l'accès public, demander un
-   code e-mail et confirmer la connexion.
-3. Effectuer une seule réservation de test sur un créneau convenu, confirmer
-   l'e-mail et l'invitation, puis vérifier le rendez-vous dans les interfaces.
-4. Supprimer le rendez-vous de test et confirmer le nettoyage.
+Avant de commencer, définir le périmètre : pilote pour les salons déjà
+configurés ou ouverture publique du nouveau salon de recette. Pour ce dernier,
+le domaine dédié reste un prérequis ; ne pas réassocier
+`testing.osezletre.fr`, déjà utilisé par Osez l'Être. Les étapes ci-dessous ne
+valent pas autorisation d'accéder à la production, d'y appliquer une migration
+ou d'y créer un rendez-vous.
 
-**Succès :** configuration et parcours contrôlé validés, sans donnée de client
-réel ; rendez-vous de recette supprimé. En cas d'échec, arrêter la campagne et
-ne pas poursuivre l'ouverture publique.
+#### 8.1 GitHub — choisir et contrôler le candidat
+
+- [ ] Identifier le commit de `preprod` qui doit être publié et vérifier que
+  les contrôles CI correspondants sont verts : `CI / Lint, typecheck, test,
+  and build`.
+- [ ] Vérifier le diff complet entre `preprod` et `main` : seuls les changements
+  attendus pour la réservation doivent être inclus.
+- [ ] Préparer une PR de `preprod` vers `main`. Vérifier le contrôle
+  `Main promotion source / Only preprod may target main` et la protection de
+  `main` ; ne pas pousser directement sur `main`.
+- [ ] Ne pas fusionner la PR tant que les vérifications Vercel, Neon et e-mail
+  ci-dessous ne sont pas prêtes. Ne pas utiliser le workflow historique
+  `Promote Preview to Production`.
+
+#### 8.2 Vercel — vérifier Production sans toucher à Preview
+
+- [ ] Dans le projet Vercel, vérifier que `main` est la branche Production et
+  que `preprod` reste la branche Preview.
+- [ ] Vérifier le domaine de production, son certificat HTTPS et le bon
+  rattachement au déploiement Production. Ne pas utiliser l'URL Preview comme
+  domaine public de production.
+- [ ] Vérifier dans l'environnement **Production** les variables nécessaires,
+  sans copier leur valeur dans un ticket ou un chat : `DATABASE_URL` (URL Neon
+  pooler), `DIRECT_URL` (connexion directe aux migrations),
+  `NEXTAUTH_SECRET`, `RESEND_API_KEY` et `RESEND_FROM`. Vérifier également
+  les éventuels secrets et URL Auth configurés pour le projet ; ils doivent
+  correspondre à Production et être distincts des valeurs Preview.
+- [ ] Confirmer que le déploiement de Production correspondra au commit retenu
+  dans la PR. Le défaut de `lindependance-testing.vercel.app` reste à traiter
+  séparément comme incident Preview.
+
+#### 8.3 Neon — sauvegarder, vérifier et appliquer les migrations si nécessaire
+
+- [ ] Avec l'opérateur autorisé, confirmer dans Neon le projet, la branche et
+  la base **production** ; créer ou confirmer une sauvegarde avant toute
+  migration.
+- [ ] Depuis un environnement sécurisé configuré pour Production, exécuter
+  `pnpm exec prisma migrate status`. Si la cible est incertaine, une migration
+  est en échec ou la liste est inattendue, arrêter et diagnostiquer.
+- [ ] Relire chaque migration en attente et confirmer qu'elle est prévue pour
+  ce déploiement. Après sauvegarde et autorisation opérationnelle, appliquer
+  uniquement avec `pnpm exec prisma migrate deploy`, puis vérifier à nouveau
+  avec `pnpm exec prisma migrate status`.
+- [ ] Ne jamais exécuter sur Production `migrate dev`, `prisma db push`,
+  `migrate reset` ou un seed. Suivre `documentation/migrations-manuelles.md` ;
+  ne jamais transmettre les URL ou mots de passe de base dans le chat.
+
+#### 8.4 Resend — confirmer l'envoi d'e-mails de production
+
+- [ ] Vérifier dans Resend que le domaine et l'expéditeur utilisés en
+  Production sont autorisés et opérationnels.
+- [ ] Confirmer que la clé `RESEND_API_KEY` de Production appartient au bon
+  environnement et que `RESEND_FROM` correspond à l'expéditeur vérifié.
+- [ ] Conserver les limites OTP standard de Production : 3 demandes par
+  adresse sur 15 minutes et 10 demandes par IP sur une heure. Ne pas relever
+  les quotas pour la recette.
+
+#### 8.5 Promotion — déployer `main`
+
+- [ ] Une fois les prérequis confirmés, obtenir l'approbation requise et
+  fusionner la PR `preprod` vers `main` selon la protection de branche.
+- [ ] Dans Vercel, vérifier que le déploiement Production s'est terminé sans
+  erreur et qu'il utilise le commit attendu. En cas d'échec, arrêter le test
+  et faire diagnostiquer le déploiement avant toute nouvelle tentative.
+
+#### 8.6 Smoke test — uniquement après autorisation explicite
+
+Ne pas lancer cette étape sans accord explicite et confirmation qu'un compte,
+une boîte e-mail, un salon et un créneau de recette **en production** sont
+autorisés. Ne jamais utiliser un compte ou un rendez-vous client réel.
+
+1. Ouvrir le domaine de production et vérifier que le bon salon et ses
+   coordonnées s'affichent.
+2. Avec le compte et la boîte autorisés, demander un seul code OTP et confirmer
+   sa réception puis la connexion. Ne pas copier le code dans le compte rendu.
+3. Créer une seule réservation sur le créneau convenu ; vérifier l'e-mail de
+   confirmation, l'invitation calendrier et la présence du rendez-vous dans
+   le portail client et l'agenda staff.
+4. Supprimer le rendez-vous de recette et vérifier son absence dans les deux
+   interfaces. Ne pas répéter le test si une étape échoue : arrêter et
+   diagnostiquer.
+
+**Critère de sortie :** déploiement du commit attendu, configuration et base
+vérifiées, e-mail et parcours contrôlé réussis, rendez-vous de recette nettoyé.
+Consigner uniquement une preuve expurgée, sans secret, adresse ni code OTP.
 
 ## Décision de lancement
 

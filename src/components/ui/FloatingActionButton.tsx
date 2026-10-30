@@ -35,20 +35,21 @@ export default function FloatingActionButton({ onClickAction, ariaLabel = 'Nouve
 
   const button = (
     <button
+      type="button"
       aria-label={ariaLabel}
       title={ariaLabel}
       data-testid="floating-quick-rdv"
       onClick={onClickAction}
-      className="fixed bottom-6 right-6 w-16 h-16 rounded-full bg-atelier-primary text-white shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
+      className="fixed bottom-6 right-6 w-16 h-16 rounded-full bg-studio-action text-white shadow-lg flex items-center justify-center hover:bg-studio-action-hover hover:scale-105 transition-transform"
       // inline styles to ensure visibility above any stacking context and enable pointer events
       style={{
         boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
         zIndex: 2147483647,
         transform: 'none',
         pointerEvents: 'auto',
-        // Fallback explicite : garantit la couleur même si bg-atelier-primary
+        // Fallback explicite : garantit la couleur même si la classe Tailwind
         // n'est pas générée par Tailwind v4 (variable CSS absente du @theme)
-        backgroundColor: 'var(--color-atelier-primary, #C5908E)',
+        backgroundColor: 'var(--color-studio-action, #74403D)',
       }}
     >
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -59,5 +60,4 @@ export default function FloatingActionButton({ onClickAction, ariaLabel = 'Nouve
 
   return createPortal(button, portalRoot)
 }
-
 

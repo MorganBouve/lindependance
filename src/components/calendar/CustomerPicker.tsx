@@ -155,15 +155,15 @@ export function CustomerPicker({ customers, onSelectAction, selectedId, labelled
                         setOpen(true)
                     }
                 }}
-                className="flex items-center gap-3.5 w-full bg-white border border-slate-200 rounded-xl p-3 text-sm cursor-pointer hover:border-atelier-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-atelier-primary focus-visible:ring-offset-2"
+                className="flex items-center gap-3.5 w-full bg-white border border-slate-500 rounded-xl p-3 text-sm cursor-pointer hover:border-studio-action transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-studio-action focus-visible:ring-offset-2"
             >
-                <Search size={18} aria-hidden="true" className="text-slate-400" />
-                <span className={cn("flex-1", !selectedCustomer && "text-slate-400")}>
+                <Search size={18} aria-hidden="true" className="text-slate-500" />
+                <span className={cn("flex-1", !selectedCustomer && "text-slate-600")}>
                     {selectedCustomer
                         ? `${selectedCustomer.firstName} ${selectedCustomer.lastName}`
                         : "Rechercher un client..."}
                 </span>
-                <ChevronsUpDown size={16} aria-hidden="true" className="text-slate-400" />
+                <ChevronsUpDown size={16} aria-hidden="true" className="text-slate-500" />
             </button>
             <span id={`${listboxId}-selection-description`} className="sr-only">
                 {selectedCustomer
@@ -219,7 +219,7 @@ export function CustomerPicker({ customers, onSelectAction, selectedId, labelled
                                             <span className="group-hover:text-atelier-dark font-medium">
                                                 {customer.firstName} {customer.lastName}
                                             </span>
-                                            {selectedId === customer.id && <Check size={16} aria-hidden="true" className="text-atelier-primary" />}
+                                            {selectedId === customer.id && <Check size={16} aria-hidden="true" className="text-studio-action" />}
                                         </div>
                                     ))
                                 ) : null}
@@ -229,7 +229,7 @@ export function CustomerPicker({ customers, onSelectAction, selectedId, labelled
                                         <p className="text-xs text-slate-500 mb-2">Aucun client trouvé</p>
                                         <button
                                             type="button"
-                                            className="text-xs font-bold text-atelier-primary flex items-center gap-1 mx-auto hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-atelier-primary"
+                                            className="text-xs font-bold text-studio-action flex items-center gap-1 mx-auto hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-studio-action"
                                             onClick={openCreate}
                                         >
                                             <UserPlus size={14} aria-hidden="true" /> {`Créer "${search}"`}
@@ -243,7 +243,7 @@ export function CustomerPicker({ customers, onSelectAction, selectedId, labelled
                         <div className="p-3">
                             <div className="flex items-center justify-between mb-3">
                                 <p id={`${popupId}-title`} className="text-xs font-bold text-slate-700 flex items-center gap-1"><UserPlus size={13} /> Nouveau client</p>
-                                <button type="button" aria-label="Annuler la création" onClick={cancelCreate} className="text-slate-400 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-atelier-primary">
+                                <button type="button" aria-label="Annuler la création" onClick={cancelCreate} className="text-slate-700 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-studio-action">
                                     <X size={14} />
                                 </button>
                             </div>
@@ -286,7 +286,7 @@ export function CustomerPicker({ customers, onSelectAction, selectedId, labelled
                                     type="button"
                                     disabled={createLoading}
                                     onClick={submitCreate}
-                                    className="w-full py-2 rounded-lg bg-atelier-primary text-white text-xs font-bold flex items-center justify-center gap-1 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-atelier-primary focus-visible:ring-offset-2"
+                                    className="w-full py-2 rounded-lg bg-studio-action text-white text-xs font-bold flex items-center justify-center gap-1 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-studio-action focus-visible:ring-offset-2"
                                 >
                                     {createLoading ? <Loader2 size={12} className="animate-spin" /> : <UserPlus size={12} />}
                                     {createLoading ? "Création..." : "Créer et sélectionner"}

@@ -6,6 +6,10 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        studio: {
+          action: '#74403D',
+          'action-hover': '#5B302E',
+        },
         atelier: {
           primary: '#C5908E', // Rose poudré
           dark: '#514443',    // Anthracite
@@ -29,4 +33,3 @@ module.exports = {
     'text-atelier-dark',
   ],
 }
-

@@ -222,7 +222,7 @@ en cours de traitement.
 #### [#84](https://github.com/Fadgag/lindependance/issues/84) Augmenter le contraste du bouton de création de campagne
 
 - **Type :** Bug
-- **Statut :** À traiter — constat confirmé sur le tableau de bord TECH_ADMIN en préproduction ; hors du diff de la branche revue.
+- **Statut :** Corrigé localement le 30 octobre 2026 dans le cadre du renforcement du contraste des boutons ; vérification visuelle en bêta après publication.
 - **GitHub Project :** Issue ouverte — Backlog.
 - **Priorité proposée :** P2
 - **Comportement observé :** Le texte blanc du bouton « Créer la campagne » est affiché sur le rose `#D4A3A1`. Le contraste mesuré dans le navigateur est d’environ 2,2:1.
@@ -232,6 +232,47 @@ en cours de traitement.
 - **Critères d'acceptation :**
   - Le texte du bouton principal atteint au moins un contraste de 4,5:1 avec son fond à l'état actif.
   - Le bouton reste distinct et lisible à ses variantes desktop et mobile, ainsi qu'à l'état désactivé.
+
+### Renforcer le contraste des boutons dans toute l’application
+
+- **Type :** Bug
+- **Statut :** Corrigé localement le 30 octobre 2026 ; vérification visuelle sur les surfaces bêta après publication.
+- **Priorité proposée :** P2
+- **Comportement observé :** Certains boutons se confondent avec leur fond ou utilisent des libellés trop peu contrastés ; leurs bordures et leurs états d'action sont parfois difficiles à distinguer.
+- **Comportement attendu :** Les boutons sont clairement identifiables dans le portail client, l'agenda, les réglages, la connexion et l'administration technique.
+- **Impact :** Les actions sont plus difficiles à repérer et à lire, notamment pour les personnes ayant une déficience visuelle ou utilisant un écran dans des conditions de lumière difficiles.
+- **Critères d'acceptation :**
+  - Les libellés actifs de taille normale atteignent un contraste d'au moins 4,5:1 avec leur fond.
+  - Les contrôles et icônes qui indiquent une action restent visuellement distincts du fond.
+  - Les états de focus, d'appui, de chargement et désactivé restent discernables.
+- **Vérification :** Les variantes d'action partagées ont été mesurées à au moins 4,5:1 dans Playwright ; la vérification manuelle de toutes les pages reste à effectuer après publication.
+
+### Afficher clairement les erreurs de code du portail client
+
+- **Type :** Bug
+- **Statut :** Corrigé localement le 30 octobre 2026 ; vérification manuelle en bêta après publication.
+- **Priorité proposée :** P2
+- **Comportement observé :** Une réponse « invalid or expired code » apparaît en anglais et loin du champ où le code est saisi.
+- **Comportement attendu :** Une erreur en français indique qu'un code est invalide, expiré ou déjà utilisé, juste sous le champ de vérification, sans révéler si l'adresse correspond à une fiche client.
+- **Impact :** Le client peut ne pas comprendre pourquoi la connexion échoue ni comment poursuivre.
+- **Critères d'acceptation :**
+  - L'erreur de code apparaît immédiatement sous le champ et lui est associée pour les technologies d'assistance.
+  - Le message indique de vérifier le code ou d'en demander un nouveau.
+  - La réponse générique de demande de code ne permet toujours pas de déterminer si l'adresse est connue.
+
+### Soumettre le bon formulaire avec la touche Entrée
+
+- **Type :** Bug
+- **Statut :** Corrigé localement le 30 octobre 2026 ; vérification manuelle en bêta après publication.
+- **Priorité proposée :** P2
+- **Comportement observé :** La touche Entrée depuis un champ texte peut déclencher une action voisine au lieu de soumettre clairement le formulaire concerné.
+- **Comportement attendu :** Entrée dans un formulaire de connexion ou de code OTP déclenche uniquement l'action de ce formulaire à l'étape active.
+- **Impact :** La personne peut lancer une action inattendue ou ne pas comprendre si sa demande de code, sa vérification ou sa connexion a été prise en compte.
+- **Critères d'acceptation :**
+  - Entrée dans l'adresse e-mail demande un code ; Entrée dans le champ OTP vérifie ce code.
+  - Entrée dans le mot de passe du personnel soumet la connexion.
+  - Les contrôles voisins qui ne soumettent pas le formulaire restent de type bouton d'action simple.
+- **Vérification :** Le test Playwright de connexion du personnel et les tests UI des formulaires ciblés passent ; l'utilisation clavier du portail reste à confirmer en bêta.
 
 #### [#88](https://github.com/Fadgag/lindependance/issues/88) Empêcher l'action fixe de recouvrir le contenu et le menu mobile
 
@@ -478,6 +519,20 @@ en cours de traitement.
   - Les états désactivé et en chargement restent distincts du retour d'appui.
   - Le retour n'entraîne pas de déplacement de mise en page ni de répétition involontaire de l'action.
 - **Résultat :** Retour bref à la souris et au toucher, indicateur de focus clavier visible ; les boutons désactivés et occupés sont exclus. Les quatre tests Playwright ciblés passent.
+
+### Déploiement Vercel — alias stable de préproduction
+
+- **Type :** Bug
+- **Statut :** À corriger — le 28/10/2026, `https://lindependance-testing.vercel.app/` répond `404` avec `X-Vercel-Error: DEPLOYMENT_NOT_FOUND`.
+- **Priorité :** P1
+- **Comportement observé :** Le lien Preview stable documenté pour `preprod` n'ouvre pas de déploiement.
+- **Comportement attendu :** L'alias stable pointe vers le déploiement Preview courant de la branche `preprod`, sans rediriger vers la production.
+- **Étapes de reproduction :** Ouvrir `https://lindependance-testing.vercel.app/` ou exécuter une requête HTTP GET ; constater la réponse 404 Vercel `DEPLOYMENT_NOT_FOUND`.
+- **Impact :** Les testeurs doivent utiliser des liens de déploiement temporaires et ne peuvent pas s'appuyer sur l'adresse stable documentée pour la préproduction.
+- **Critères d'acceptation :**
+  - L'alias ouvre le déploiement Preview courant de `preprod`.
+  - Après mise à jour de `preprod`, l'alias suit son nouveau déploiement.
+  - La production reste associée à `main` et n'est pas modifiée par ce réglage.
 
 ### Vérifications manuelles bêta restantes
 

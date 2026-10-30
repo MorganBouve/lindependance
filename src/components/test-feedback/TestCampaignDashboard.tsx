@@ -321,7 +321,7 @@ export default function TestCampaignDashboard() {
           <h1 className="mt-2 font-serif text-3xl text-(--studio-text) md:text-4xl">Suivi des campagnes de test</h1>
           <p className="mt-2 text-sm text-(--studio-muted)">Créez une campagne et partagez son lien de recette.</p>
         </div>
-        <a href="#nouvelle-campagne" className="rounded-xl bg-(--studio-text) px-5 py-3 text-sm font-semibold text-white">
+        <a href="#nouvelle-campagne" className="rounded-xl bg-studio-text px-5 py-3 text-sm font-semibold text-white">
           Nouvelle campagne
         </a>
       </header>
@@ -527,7 +527,7 @@ export default function TestCampaignDashboard() {
             <button
               type="submit"
               disabled={saving || loadingRecipients || !data?.organizations.length}
-              className="rounded-xl bg-studio-primary px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-studio-primary/20 disabled:opacity-50"
+              className="rounded-xl bg-studio-action px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-studio-action/20 disabled:opacity-50"
             >
               {saving ? 'Création…' : 'Créer la campagne'}
             </button>
@@ -535,7 +535,7 @@ export default function TestCampaignDashboard() {
           <button
             type="submit"
             disabled={saving || loadingRecipients || !data?.organizations.length}
-            className="w-full rounded-xl bg-studio-primary px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-studio-primary/20 disabled:opacity-50 md:hidden"
+            className="w-full rounded-xl bg-studio-action px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-studio-action/20 disabled:opacity-50 md:hidden"
           >
             {saving ? 'Création…' : 'Créer la campagne'}
           </button>

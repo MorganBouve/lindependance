@@ -246,7 +246,7 @@ export default function UnavailabilityModal({
                     className={`py-2 px-3 rounded-xl border text-sm font-medium transition-colors text-left
                       ${recurrence === r
                         ? 'bg-slate-800 text-white border-slate-800'
-                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'}`}>
+                        : 'bg-white text-slate-600 border-slate-500 hover:border-studio-action'}`}>
                     {RECURRENCE_LABELS[r]}
                   </button>
                 ))}
@@ -274,19 +274,19 @@ export default function UnavailabilityModal({
           {isEditing && (
             <div className="flex gap-2">
               <button type="button" onClick={() => handleDelete(false)} disabled={isSaving}
-                className="text-red-500 text-[11px] font-bold flex items-center gap-1.5 hover:opacity-80 transition-opacity">
+                className="text-red-700 text-[11px] font-bold flex items-center gap-1.5 hover:opacity-80 transition-opacity">
                 <Trash2 size={13} /> Supprimer ce créneau
               </button>
               {isSeries && (
                 <button type="button" onClick={() => handleDelete(true)} disabled={isSaving}
-                  className="text-red-600 text-[11px] font-bold flex items-center gap-1.5 hover:opacity-80 transition-opacity border-l border-red-200 pl-2">
+                  className="text-red-700 text-[11px] font-bold flex items-center gap-1.5 hover:opacity-80 transition-opacity border-l border-red-200 pl-2">
                   <Trash2 size={13} /> Supprimer les créneaux répétés
                 </button>
               )}
             </div>
           )}
           <div className="flex gap-2 ml-auto">
-            <button type="button" onClick={onClose} className="px-5 py-2 text-slate-400 font-bold text-sm">ANNULER</button>
+            <button type="button" onClick={onClose} className="px-5 py-2 text-slate-700 font-bold text-sm">ANNULER</button>
             {!isEditing && (
               <button type="submit" disabled={isFormInvalid || isSaving}
                 className="px-6 py-2.5 bg-slate-800 text-white rounded-full font-bold text-sm flex items-center gap-2 shadow disabled:opacity-50 disabled:cursor-not-allowed">

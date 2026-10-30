@@ -104,7 +104,7 @@ export default function EditPaymentModal({ appointment, onClose, onSuccess }: Ed
                   className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl border transition-all text-sm font-bold ${
                     paymentMethod === id
                       ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100'
-                      : 'bg-white border-gray-200 text-gray-400 hover:border-indigo-300'
+                      : 'bg-white border-gray-500 text-gray-700 hover:border-indigo-600'
                   }`}
                 >
                   <Icon size={18} />

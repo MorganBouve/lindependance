@@ -96,7 +96,7 @@ export default function ProductPicker({ products, onSelect, onClose }: ProductPi
       </span>
       <div className="flex-1 min-w-0">
         <p className="text-xs font-medium text-gray-800 truncate">{p.name}</p>
-        <p className="text-[10px] text-gray-400">{p.priceTTC.toFixed(2)} €</p>
+        <p className="text-[10px] text-gray-600">{p.priceTTC.toFixed(2)} €</p>
       </div>
     </button>
   );
@@ -141,7 +141,6 @@ export default function ProductPicker({ products, onSelect, onClose }: ProductPi
     </div>
   );
 }
-
 
 
 

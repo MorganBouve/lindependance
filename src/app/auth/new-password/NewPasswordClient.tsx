@@ -77,8 +77,9 @@ export default function NewPasswordClient({ token }: { token?: string }) {
         <label className="block mb-2">Confirmer le mot de passe</label>
         <PasswordInput value={confirm} onChangeAction={(e) => setConfirm(e.target.value)} placeholder="Confirmer le mot de passe" />
         <button
+          type="submit"
           disabled={!token || isSubmitting || ok}
-          className="w-full py-2 rounded bg-studio-primary text-white font-bold disabled:opacity-50"
+          className="w-full py-2 rounded bg-studio-action text-white font-bold disabled:opacity-50"
         >
           {isSubmitting ? 'Réinitialisation…' : 'Réinitialiser'}
         </button>

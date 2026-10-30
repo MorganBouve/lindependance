@@ -97,16 +97,71 @@ describe('PortalBooking', () => {
     )
 
     const emailInput = await screen.findByLabelText('Email enregistré sur votre fiche client')
+    expect(screen.getByRole('button', { name: 'Recevoir un code' })).toHaveAttribute('type', 'submit')
     fireEvent.change(emailInput, { target: { value: 'client@example.test' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Recevoir un code' }))
+    const authForm = emailInput.closest('form')
+    if (!authForm) throw new Error('Customer authentication form is missing')
+    fireEvent.submit(authForm)
     expect(await screen.findByText(/Si cet email correspond à une fiche client/)).toBeInTheDocument()
 
-    fireEvent.change(screen.getByLabelText('Code de vérification'), { target: { value: '123456' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Vérifier le code' }))
+    const codeInput = screen.getByLabelText('Code de vérification')
+    expect(screen.getByRole('button', { name: 'Vérifier le code' })).toHaveAttribute('type', 'submit')
+    fireEvent.change(codeInput, { target: { value: '123456' } })
+    fireEvent.submit(authForm)
 
     expect(await screen.findByText('Adresse email vérifiée')).toBeInTheDocument()
     expect(screen.queryByLabelText('Email enregistré sur votre fiche client')).not.toBeInTheDocument()
     expect(screen.queryByText(/premier rendez-vous/)).not.toBeInTheDocument()
+  })
+
+  it('explains invalid or expired codes beside the verification field', async () => {
+    vi.mocked(fetch).mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.endsWith('/services')) return Promise.resolve(response([]))
+      if (url.endsWith('/praticiens')) return Promise.resolve(response([]))
+      if (url.endsWith('/customers')) return Promise.resolve(response({ error: 'Unauthorized' }, 401))
+      if (url.endsWith('/api/portail/auth/request-code')) return Promise.resolve(response({ ok: true }))
+      if (url.endsWith('/api/portail/auth/verify-code')) {
+        return Promise.resolve(response({ error: 'Invalid or expired code' }, 400))
+      }
+      return Promise.resolve(response({ timezone: 'Europe/Paris', slots: [] }))
+    })
+
+    render(
+      <PortalBooking
+        organizationSlug="osezletre"
+        organizationTimezone="Europe/Paris"
+        organizationName="Salon Élise"
+        branding={DEFAULT_ORGANIZATION_BRANDING}
+        portalContactPhone="01 23 45 67 89"
+        portalContactEmail={null}
+      />,
+    )
+
+    const emailInput = await screen.findByLabelText('Email enregistré sur votre fiche client')
+    fireEvent.change(emailInput, { target: { value: 'client@example.test' } })
+    const authForm = emailInput.closest('form')
+    if (!authForm) throw new Error('Customer authentication form is missing')
+    fireEvent.submit(authForm)
+
+    const codeInput = await screen.findByLabelText('Code de vérification')
+    fireEvent.change(codeInput, { target: { value: '123456' } })
+    fireEvent.submit(authForm)
+
+    const error = await screen.findByRole('alert')
+    expect(error).toHaveTextContent(
+      'Le code saisi est invalide, expiré ou déjà utilisé. Vérifiez-le ou demandez-en un nouveau.',
+    )
+    expect(codeInput).toHaveAttribute('aria-invalid', 'true')
+    expect(codeInput).toHaveAttribute('aria-describedby', 'portal-code-error')
+    expect(error).toHaveAttribute('id', 'portal-code-error')
+    expect(error.parentElement).toBe(authForm)
+    expect(error.previousElementSibling).toBe(codeInput.closest('label'))
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/portail/auth/verify-code',
+      expect.objectContaining({ method: 'POST' }),
+    )
+    expect(fetch).not.toHaveBeenCalledWith('/api/portail/rdv', expect.anything())
   })
 
   it('tells first-time visitors to call the salon when a phone number is available', async () => {

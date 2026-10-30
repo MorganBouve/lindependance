@@ -91,7 +91,7 @@ export default function DashboardShell({ initialData, currentPeriod }: Dashboard
               className={`px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
                 currentPeriod === tab.id
                   ? "bg-white text-indigo-600 shadow-sm ring-1 ring-black/5"
-                  : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                  : "text-gray-700 hover:text-gray-800 hover:bg-gray-50"
               }`}
             >
               {tab.label}

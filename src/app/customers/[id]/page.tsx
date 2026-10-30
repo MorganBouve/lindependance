@@ -181,14 +181,16 @@ export default function ClientDetail() {
               <button
                 disabled={savingEmail}
                 onClick={saveEmail}
-                className="w-full mt-4 py-3 bg-studio-primary text-white rounded-xl font-bold disabled:opacity-50"
+                type="button"
+                className="w-full mt-4 py-3 bg-studio-action text-white rounded-xl font-bold disabled:opacity-50"
               >
                 {savingEmail ? 'Enregistrement...' : 'Enregistrer l’email'}
               </button>
               <button
                 disabled={savingEmail || sendingPortalEmail || !editingEmail.trim()}
                 onClick={sendPortalEmail}
-                className="w-full mt-2 py-3 border border-studio-primary text-studio-primary rounded-xl font-bold disabled:opacity-50"
+                type="button"
+                className="w-full mt-2 py-3 border border-studio-action text-studio-action rounded-xl font-bold hover:bg-studio-action hover:text-white disabled:opacity-50"
               >
                 {sendingPortalEmail ? 'Envoi en cours...' : 'Envoyer les informations de réservation'}
               </button>
@@ -208,6 +210,7 @@ export default function ClientDetail() {
               <button
                   disabled={saving}
                   onClick={saveNotes}
+                  type="button"
                   className="w-full mt-4 py-3 bg-studio-text text-white rounded-xl font-bold hover:bg-opacity-90 disabled:opacity-50 transition-all"
               >
                 {saving ? 'Enregistrement...' : 'Enregistrer les notes'}
