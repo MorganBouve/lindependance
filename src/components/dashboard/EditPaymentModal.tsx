@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { X, CreditCard, Banknote, Landmark, Save, CheckCircle2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { CheckoutAppointment } from '@/types/models'
@@ -19,19 +19,25 @@ interface EditPaymentModalProps {
 }
 
 export default function EditPaymentModal({ appointment, onClose, onSuccess }: EditPaymentModalProps) {
-  const [paymentMethod, setPaymentMethod] = useState<string>(
-    appointment.paymentMethod ?? 'CB'
-  )
-  const [note, setNote] = useState<string>(
-    appointment.note ?? appointment.Note ?? ''
-  )
+  const [formState, setFormState] = useState(() => ({
+    appointment,
+    paymentMethod: appointment.paymentMethod ?? 'CB',
+    note: appointment.note ?? appointment.Note ?? '',
+  }))
   const [saving, setSaving] = useState(false)
-
-  // Réinitialise si l'appointment change
-  useEffect(() => {
-    setPaymentMethod(appointment.paymentMethod ?? 'CB')
-    setNote(appointment.note ?? appointment.Note ?? '')
-  }, [appointment])
+  const isCurrentAppointment = formState.appointment === appointment
+  const paymentMethod = isCurrentAppointment
+    ? formState.paymentMethod
+    : appointment.paymentMethod ?? 'CB'
+  const note = isCurrentAppointment
+    ? formState.note
+    : appointment.note ?? appointment.Note ?? ''
+  const setPaymentMethod = (nextPaymentMethod: string) => {
+    setFormState({ appointment, paymentMethod: nextPaymentMethod, note })
+  }
+  const setNote = (nextNote: string) => {
+    setFormState({ appointment, paymentMethod, note: nextNote })
+  }
 
   const displayAmount = appointment.finalPrice ?? appointment.service?.price ?? 0
 

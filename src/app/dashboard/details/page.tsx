@@ -57,8 +57,9 @@ export default async function DetailsPage({ searchParams }: { searchParams: Prom
       </div>
     )
   }
-  const from = parsed.data.from ? new Date(parsed.data.from) : new Date(Date.now() - 30 * 24 * 3600 * 1000)
-  const to = parsed.data.to ? new Date(parsed.data.to) : new Date()
+  const now = new Date()
+  const from = parsed.data.from ? new Date(parsed.data.from) : new Date(now.getTime() - 30 * 24 * 3600 * 1000)
+  const to = parsed.data.to ? new Date(parsed.data.to) : now
   const filter = parsed.data.filter ?? 'all'
   const status = parsed.data.status ?? 'all'
   const onlyPaid = status === 'paid'
@@ -138,5 +139,4 @@ export default async function DetailsPage({ searchParams }: { searchParams: Prom
     </div>
   )
 }
-
 

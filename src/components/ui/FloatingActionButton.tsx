@@ -1,35 +1,19 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
+import React, { useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
 
 // Note: name the prop ending with "Action" to signal server-action compatibility
-export default function FloatingActionButton({ onClickAction, ariaLabel = 'Nouveau' }: { onClickAction?: () => void; ariaLabel?: string }) {
-  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null)
+const subscribeToPortalRoot = () => () => {}
+const getPortalRoot = () => document.body
+const getServerPortalRoot = () => null
 
-  useEffect(() => {
-    try {
-      if (typeof document !== 'undefined') {
-        // create (or reuse) a portal root attached to document.body so the FAB is not affected
-        // by transformed/overflowed ancestors.
-        let root = document.getElementById('fab-portal') as HTMLElement | null
-        if (!root) {
-          root = document.createElement('div')
-          root.id = 'fab-portal'
-          // pointer-events:none on the wrapper so it never accidentally captures events
-          // outside the button itself (the button re-enables pointer-events:auto)
-          root.style.pointerEvents = 'none'
-          document.body.appendChild(root)
-        }
-        setPortalRoot(root)
-      }
-    } catch (e) {
-      // ignore in SSR or env where document is not available
-    }
-    return () => {
-      // keep portal root to avoid removing DOM nodes that other logic might rely on
-    }
-  }, [])
+export default function FloatingActionButton({ onClickAction, ariaLabel = 'Nouveau' }: { onClickAction?: () => void; ariaLabel?: string }) {
+  const portalRoot = useSyncExternalStore(
+    subscribeToPortalRoot,
+    getPortalRoot,
+    getServerPortalRoot,
+  )
 
   if (!portalRoot) return null
 
@@ -60,4 +44,3 @@ export default function FloatingActionButton({ onClickAction, ariaLabel = 'Nouve
 
   return createPortal(button, portalRoot)
 }
-

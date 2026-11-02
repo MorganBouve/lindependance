@@ -60,7 +60,6 @@ export function useOrganizationBranding(): OrganizationBranding {
     let latestRequest = 0
     if (status === 'loading') return () => { active = false }
     if (!organizationId) {
-      setState({ organizationId: null, branding: DEFAULT_ORGANIZATION_BRANDING })
       return () => { active = false }
     }
 

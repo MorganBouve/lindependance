@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Plus, Trash2, Edit2, Save, X, Package, Euro, Droplet, Sparkles, Scissors, FlaskConical, Wind, Heart, Star, History } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import type { Product, ProductStockMovement } from '@/types/models'
-import { ProductStockMovementListSchema, type ProductIconName } from '@/schemas/products'
+import { ProductListSchema, ProductStockMovementListSchema, type ProductIconName } from '@/schemas/products'
 import { isAtOrBelowStockMinimum, MAX_STOCK_QUANTITY } from '@/domain/stock/policies'
 
 const ICON_OPTIONS: { name: ProductIconName; label: string; icon: LucideIcon }[] = [
@@ -70,18 +70,40 @@ export default function ProductManager() {
   const [historyError, setHistoryError] = useState('')
   const [isLoadingHistory, setIsLoadingHistory] = useState(false)
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (): Promise<Product[]> => {
+    const response = await fetch('/api/products', { credentials: 'include' })
+    if (!response.ok) throw new Error('Impossible de charger les produits.')
+    const parsed = ProductListSchema.safeParse(await response.json())
+    if (!parsed.success) throw new Error('La liste des produits reçue est invalide.')
+    return parsed.data
+  }
+
+  const loadProducts = async () => {
     try {
-      const res = await fetch('/api/products', { credentials: 'include' })
-      if (!res.ok) throw new Error('Impossible de charger les produits.')
-      setProducts(await res.json())
+      setProducts(await fetchProducts())
       setPageError('')
     } catch {
       setPageError('Impossible de charger les produits. Réessayez.')
     }
   }
 
-  useEffect(() => { void fetchProducts() }, [])
+  useEffect(() => {
+    let active = true
+    void (async () => {
+      try {
+        const nextProducts = await fetchProducts()
+        if (active) {
+          setProducts(nextProducts)
+          setPageError('')
+        }
+      } catch {
+        if (active) setPageError('Impossible de charger les produits. Réessayez.')
+      }
+    })()
+    return () => {
+      active = false
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -103,7 +125,7 @@ export default function ProductManager() {
       }
       setFormData(emptyForm)
       setIsEditing(null)
-      await fetchProducts()
+      await loadProducts()
     } catch {
       setFormError('Impossible d’enregistrer le produit. Vérifiez votre connexion.')
     } finally {
@@ -134,7 +156,7 @@ export default function ProductManager() {
         setPageError('Impossible de supprimer le produit.')
         return
       }
-      await fetchProducts()
+      await loadProducts()
     } catch {
       setPageError('Impossible de supprimer le produit. Vérifiez votre connexion.')
     }
@@ -175,7 +197,7 @@ export default function ProductManager() {
         return
       }
       setStockDialogProduct(null)
-      await fetchProducts()
+      await loadProducts()
     } catch {
       setMovementError('Impossible d’enregistrer le mouvement. Vérifiez votre connexion.')
     } finally {

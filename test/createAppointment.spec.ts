@@ -18,8 +18,7 @@ describe('CreateAppointmentSchema', () => {
     expect(result.success).toBe(true)
     if (result.success) {
       // organizationId should not be present on parsed data
-      expect((result.data as any).organizationId).toBeUndefined()
+      expect('organizationId' in result.data).toBe(false)
     }
   })
 })
-

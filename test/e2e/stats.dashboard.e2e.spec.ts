@@ -6,10 +6,12 @@ import { PrismaClient } from '@prisma/client'
 const tmpDir = path.join(process.cwd(), 'tmp')
 if (!fs.existsSync(tmpDir)) fs.mkdirSync(tmpDir)
 
+type AuthSession = { user: { organizationId: string } } | null
+
 describe.skip('E2E /api/stats/dashboard isolation', () => {
   let tmpDbPath: string
   let prismaTest: PrismaClient
-  let authMock: any
+  let authMock: () => Promise<AuthSession>
   let orgAId: string
   let orgBId: string
 
@@ -20,7 +22,7 @@ describe.skip('E2E /api/stats/dashboard isolation', () => {
     fs.copyFileSync(src, tmpDbPath)
 
     // Create a PrismaClient instance pointed at the tmp DB
-    prismaTest = new PrismaClient({ datasources: { db: { url: `file:${tmpDbPath}` } } } as any)
+    prismaTest = new PrismaClient({ datasources: { db: { url: `file:${tmpDbPath}` } } })
     await prismaTest.$connect()
 
     // Create two organizations and related data
@@ -42,7 +44,7 @@ describe.skip('E2E /api/stats/dashboard isolation', () => {
     vi.doMock('../../src/lib/prisma', () => ({ prisma: prismaTest }))
 
     // Prepare auth mock function to be set by tests
-    authMock = vi.fn()
+    authMock = vi.fn<() => Promise<AuthSession>>()
     vi.doMock('../../src/auth', () => ({ auth: () => authMock() }))
   })
 
@@ -62,6 +64,4 @@ describe.skip('E2E /api/stats/dashboard isolation', () => {
     expect(Number(resOther.summary.totalRevenue)).toBe(0)
   })
 })
-
-
 

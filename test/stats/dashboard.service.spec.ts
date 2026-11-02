@@ -12,15 +12,20 @@ vi.mock('../../src/lib/prisma', () => ({
 import { prisma } from '../../src/lib/prisma'
 import dashboardService from '../../src/services/dashboard.service'
 
+// RAISON: vi.mock replaces these typed Prisma methods with Vitest mocks.
+const appointmentFindManyMock = prisma.appointment.findMany as ReturnType<typeof vi.fn>
+const staffCountMock = prisma.staff.count as ReturnType<typeof vi.fn>
+const customerCountMock = prisma.customer.count as ReturnType<typeof vi.fn>
+
 beforeEach(() => {
   vi.clearAllMocks()
 })
 
 describe('dashboard.service.getDashboardForOrg', () => {
   it('returns zeros and empty timeseries when there are no appointments', async () => {
-    ;(prisma.appointment.findMany as any).mockResolvedValueOnce([])
-    ;(prisma.staff.count as any).mockResolvedValueOnce(0)
-    ;(prisma.customer.count as any).mockResolvedValueOnce(0)
+    appointmentFindManyMock.mockResolvedValueOnce([])
+    staffCountMock.mockResolvedValueOnce(0)
+    customerCountMock.mockResolvedValueOnce(0)
 
     const res = await dashboardService.getDashboardForOrg('org-1', { start: new Date('2024-01-01'), end: new Date('2024-01-07') })
 
@@ -42,9 +47,9 @@ describe('dashboard.service.getDashboardForOrg', () => {
       { startTime: new Date('2024-01-03T12:00:00Z'), service: { price: null } },
     ]
 
-    ;(prisma.appointment.findMany as any).mockResolvedValueOnce(appointments)
-    ;(prisma.staff.count as any).mockResolvedValueOnce(2)
-    ;(prisma.customer.count as any).mockResolvedValueOnce(1)
+    appointmentFindManyMock.mockResolvedValueOnce(appointments)
+    staffCountMock.mockResolvedValueOnce(2)
+    customerCountMock.mockResolvedValueOnce(1)
 
     const res = await dashboardService.getDashboardForOrg('org-1', { start: new Date('2024-01-01'), end: new Date('2024-01-05') })
 
@@ -53,8 +58,8 @@ describe('dashboard.service.getDashboardForOrg', () => {
     expect(res.summary.newCustomerCount).toBe(1)
     // find the day buckets
     expect(res.summary.totalRevenue).toBeCloseTo(125) // 50 + 75 + 0
-    const day2 = res.timeseries.find((p: any) => p.date.startsWith('2024-01-02'))
-    const day3 = res.timeseries.find((p: any) => p.date.startsWith('2024-01-03'))
+    const day2 = res.timeseries.find((point) => point.date.startsWith('2024-01-02'))
+    const day3 = res.timeseries.find((point) => point.date.startsWith('2024-01-03'))
     expect(day2).toBeDefined()
     expect(day2?.revenue).toBeCloseTo(50)
     expect(day3).toBeDefined()
@@ -63,4 +68,3 @@ describe('dashboard.service.getDashboardForOrg', () => {
     expect(day3?.count).toBeGreaterThanOrEqual(2)
   })
 })
-

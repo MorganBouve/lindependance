@@ -1,8 +1,5 @@
 
-// Use runtime require to avoid TS type dependency on '@playwright/test' in environments
-// where dev deps may not be installed (pre-commit hooks). The test still runs with Node.
-// @ts-ignore
-const { test, expect, request } = require('@playwright/test')
+import { expect, request, test } from '@playwright/test'
 
 test('billing accuracy: service + products equals dashboard total', async () => {
   const apiContext = await request.newContext({ baseURL: process.env.BASE_URL ?? 'http://localhost:3000' })
@@ -28,7 +25,6 @@ test('billing accuracy: service + products equals dashboard total', async () => 
   // realizedRevenue should equal expected (service + products)
   expect(Math.round((summary.summary.realizedRevenue ?? summary.summary.totalRevenue) * 100)).toBe(expected * 100)
 })
-
 
 
 

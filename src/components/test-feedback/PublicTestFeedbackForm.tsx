@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { z } from 'zod'
 import {
   PublicTestCampaignResponseSchema,
@@ -90,6 +90,19 @@ function readCampaignDraft(
   }
 }
 
+function writeCampaignDraft(
+  campaignToken: string,
+  profile: TestProfile,
+  draft: StoredCampaignDraft,
+): string {
+  try {
+    window.localStorage.setItem(`test-feedback:draft:${campaignToken}:${profile}`, JSON.stringify(draft))
+    return ''
+  } catch {
+    return 'Le stockage local est indisponible ; vos réponses ne pourront pas être restaurées après fermeture de la page.'
+  }
+}
+
 const emptyCampaignReview: CampaignReviewDraft = {
   clarity: '',
   duration: '',
@@ -174,51 +187,70 @@ export default function PublicTestFeedbackForm({ campaignToken }: { campaignToke
   const [draftReadyForProfile, setDraftReadyForProfile] = useState<TestProfile | ''>('')
   const [draftWarning, setDraftWarning] = useState('')
   const [draftSaveWarning, setDraftSaveWarning] = useState('')
-  const [loading, setLoading] = useState(true)
+  const [loadedCampaignToken, setLoadedCampaignToken] = useState('')
+  const [campaignTokenForData, setCampaignTokenForData] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const pendingResultCount = Object.keys(selected).filter((scenarioId) => !submitted[scenarioId]).length
 
   useEffect(() => {
-    if (!profile || draftReadyForProfile !== profile) return
-
-    const key = `test-feedback:draft:${campaignToken}:${profile}`
-    const draft: StoredCampaignDraft = {
-      version: 1,
-      selected,
-      submitted,
-      campaignReview,
-      environment,
-    }
-    try {
-      window.localStorage.setItem(key, JSON.stringify(draft))
-      setDraftSaveWarning('')
-    } catch {
-      setDraftSaveWarning('Le stockage local est indisponible ; vos réponses ne pourront pas être restaurées après fermeture de la page.')
-    }
-  }, [campaignReview, campaignToken, draftReadyForProfile, environment, profile, selected, submitted])
-
-  const loadCampaign = useCallback(async () => {
-    setLoading(true)
-    setError('')
-    try {
-      const response = await fetch(`/api/test-feedback/${campaignToken}`, { cache: 'no-store' })
-      if (!response.ok) throw new Error(await responseError(response))
-      const payload: unknown = await response.json()
-      const parsed = PublicTestCampaignResponseSchema.safeParse(payload)
-      if (!parsed.success) throw new Error('Informations de campagne invalides')
-      setCampaign(parsed.data)
-    } catch (cause: unknown) {
-      setError(cause instanceof Error ? cause.message : 'Impossible de charger cette campagne')
-    } finally {
-      setLoading(false)
+    let active = true
+    void (async () => {
+      try {
+        const response = await fetch(`/api/test-feedback/${campaignToken}`, { cache: 'no-store' })
+        if (!response.ok) throw new Error(await responseError(response))
+        const payload: unknown = await response.json()
+        const parsed = PublicTestCampaignResponseSchema.safeParse(payload)
+        if (!parsed.success) throw new Error('Informations de campagne invalides')
+        if (active) {
+          setCampaign(parsed.data)
+          setCampaignTokenForData(campaignToken)
+          setError('')
+        }
+      } catch (cause: unknown) {
+        if (active) {
+          setError(cause instanceof Error ? cause.message : 'Impossible de charger cette campagne')
+        }
+      } finally {
+        if (active) setLoadedCampaignToken(campaignToken)
+      }
+    })()
+    return () => {
+      active = false
     }
   }, [campaignToken])
 
-  useEffect(() => {
-    void loadCampaign()
-  }, [loadCampaign])
+  function saveDraft(
+    profileToSave: TestProfile | '',
+    selectedDraft: Record<string, ScenarioEntry> = selected,
+    submittedDraft: Record<string, boolean> = submitted,
+    reviewDraft: CampaignReviewDraft = campaignReview,
+    environmentDraft = environment,
+  ) {
+    if (!profileToSave) {
+      setDraftSaveWarning('')
+      return
+    }
+    setDraftSaveWarning(writeCampaignDraft(campaignToken, profileToSave, {
+      version: 1,
+      selected: selectedDraft,
+      submitted: submittedDraft,
+      campaignReview: reviewDraft,
+      environment: environmentDraft,
+    }))
+  }
+
+  function updateEnvironment(value: string) {
+    setEnvironment(value)
+    if (draftReadyForProfile === profile) saveDraft(profile, selected, submitted, campaignReview, value)
+  }
+
+  function updateCampaignReview(update: (current: CampaignReviewDraft) => CampaignReviewDraft) {
+    const nextReview = update(campaignReview)
+    setCampaignReview(nextReview)
+    if (draftReadyForProfile === profile) saveDraft(profile, selected, submitted, nextReview)
+  }
 
   async function chooseProfile(value: TestProfile) {
     setProfile(value)
@@ -244,30 +276,43 @@ export default function PublicTestFeedbackForm({ campaignToken }: { campaignToke
         value,
         new Set(parsed.data.scenarios.map((scenario) => scenario.id)),
       )
-      if (restored.draft) {
-        setSelected(restored.draft.selected)
-        setSubmitted(restored.draft.submitted)
-        setCampaignReview(restored.draft.campaignReview)
-        setEnvironment(restored.draft.environment)
-      }
+      const nextSelected = restored.draft?.selected ?? {}
+      const nextSubmitted = restored.draft?.submitted ?? {}
+      const nextReview = restored.draft?.campaignReview ?? emptyCampaignReview
+      const nextEnvironment = restored.draft?.environment ?? ''
+      setSelected(nextSelected)
+      setSubmitted(nextSubmitted)
+      setCampaignReview(nextReview)
+      setEnvironment(nextEnvironment)
       setDraftWarning(restored.warning)
       setDraftReadyForProfile(value)
+      setDraftSaveWarning(writeCampaignDraft(campaignToken, value, {
+        version: 1,
+        selected: nextSelected,
+        submitted: nextSubmitted,
+        campaignReview: nextReview,
+        environment: nextEnvironment,
+      }))
     } catch (cause: unknown) {
       setError(cause instanceof Error ? cause.message : 'Impossible de charger les scénarios')
     }
   }
 
   function updateScenario(id: string, update: Partial<ScenarioEntry>) {
-    setSelected((current) => ({
-      ...current,
-      [id]: { status: current[id]?.status ?? 'PASS', comment: current[id]?.comment ?? '', ...update },
-    }))
-    setSubmitted((current) => ({ ...current, [id]: false }))
+    const nextSelected = {
+      ...selected,
+      [id]: { status: selected[id]?.status ?? 'PASS', comment: selected[id]?.comment ?? '', ...update },
+    }
+    const nextSubmitted = { ...submitted, [id]: false }
+    setSelected(nextSelected)
+    setSubmitted(nextSubmitted)
+    if (draftReadyForProfile === profile) saveDraft(profile, nextSelected, nextSubmitted)
   }
 
   async function submitFeedback() {
     setError('')
     setNotice('')
+    setDraftSaveWarning('')
     const results = Object.entries(selected)
       .filter(([scenarioId]) => !submitted[scenarioId])
       .map(([scenarioId, value]) => ({
@@ -309,11 +354,27 @@ export default function PublicTestFeedbackForm({ campaignToken }: { campaignToke
       })
       if (!response.ok) throw new Error(await responseError(response))
       setNotice(`${results.length} réponse${results.length > 1 ? 's' : ''} enregistrée${results.length > 1 ? 's' : ''}. Merci pour votre retour.`)
+      const currentDraft = readCampaignDraft(
+        campaignToken,
+        profile,
+        new Set(scenarios.map((scenario) => scenario.id)),
+      ).draft
       setSubmitted((current) => ({
         ...current,
         ...Object.fromEntries(results.map(({ scenarioId }) => [scenarioId, true])),
       }))
       setCampaignReview(emptyCampaignReview)
+      const nextSubmitted = {
+        ...(currentDraft?.submitted ?? submitted),
+        ...Object.fromEntries(results.map(({ scenarioId }) => [scenarioId, true])),
+      }
+      saveDraft(
+        profile,
+        currentDraft?.selected ?? selected,
+        nextSubmitted,
+        emptyCampaignReview,
+        currentDraft?.environment ?? environment,
+      )
     } catch (cause: unknown) {
       setError(cause instanceof Error ? cause.message : 'Impossible d’enregistrer vos résultats')
     } finally {
@@ -321,11 +382,11 @@ export default function PublicTestFeedbackForm({ campaignToken }: { campaignToke
     }
   }
 
-  if (loading) {
+  if (loadedCampaignToken !== campaignToken) {
     return <p role="status" className="mx-auto max-w-3xl p-8 text-sm text-(--studio-muted)">Chargement de la campagne…</p>
   }
 
-  if (!campaign) {
+  if (!campaign || campaignTokenForData !== campaignToken) {
     return <main className="mx-auto max-w-3xl p-6"><p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-800">{error || 'Campagne introuvable.'}</p></main>
   }
 
@@ -372,6 +433,7 @@ export default function PublicTestFeedbackForm({ campaignToken }: { campaignToke
                     name="profile"
                     value={availableProfile}
                     checked={profile === availableProfile}
+                    disabled={saving}
                     onChange={() => void chooseProfile(availableProfile)}
                   />
                   <span>
@@ -391,7 +453,7 @@ export default function PublicTestFeedbackForm({ campaignToken }: { campaignToke
 
           <div className="grid gap-2 rounded-2xl border border-(--studio-border) bg-white p-6 text-sm font-medium text-(--studio-text)">
             <label htmlFor="test-feedback-environment">Sur quel appareil faites-vous le test ? (facultatif)</label>
-            <input id="test-feedback-environment" maxLength={120} value={environment} onChange={(event) => setEnvironment(event.target.value)} placeholder="Ex. iPhone ou ordinateur" className="rounded-lg border border-(--studio-border) px-3 py-2 font-normal" />
+            <input id="test-feedback-environment" maxLength={120} value={environment} onChange={(event) => updateEnvironment(event.target.value)} placeholder="Ex. iPhone ou ordinateur" className="rounded-lg border border-(--studio-border) px-3 py-2 font-normal" />
             <p className="text-xs font-normal text-(--studio-muted)">N’indiquez pas votre nom, vos coordonnées ni aucune autre information qui permettrait de vous identifier.</p>
           </div>
 
@@ -412,20 +474,20 @@ export default function PublicTestFeedbackForm({ campaignToken }: { campaignToke
                     <label className="flex cursor-pointer items-start gap-3">
                       <input type="checkbox" checked={Boolean(entry)} onChange={(event) => {
                         const checked = event.target.checked
-                        setSelected((current) => {
-                          if (!checked) {
-                            const next = { ...current }
-                            delete next[scenario.id]
-                            return next
-                          }
-                          return { ...current, [scenario.id]: { status: 'PASS', comment: '' } }
-                        })
+                        const nextSelected = { ...selected }
                         if (!checked) {
-                          setSubmitted((current) => {
-                            const next = { ...current }
-                            delete next[scenario.id]
-                            return next
-                          })
+                          delete nextSelected[scenario.id]
+                        } else {
+                          nextSelected[scenario.id] = { status: 'PASS', comment: '' }
+                        }
+                        const nextSubmitted = { ...submitted }
+                        if (!checked) {
+                          delete nextSubmitted[scenario.id]
+                        }
+                        setSelected(nextSelected)
+                        setSubmitted(nextSubmitted)
+                        if (draftReadyForProfile === profile) {
+                          saveDraft(profile, nextSelected, nextSubmitted)
                         }
                       }} />
                       <span>
@@ -508,7 +570,7 @@ export default function PublicTestFeedbackForm({ campaignToken }: { campaignToke
                   Les consignes étaient-elles compréhensibles ?
                   <select
                     value={campaignReview.clarity}
-                    onChange={(event) => setCampaignReview((current) => ({
+                    onChange={(event) => updateCampaignReview((current) => ({
                       ...current,
                       clarity: findChoice(campaignReviewChoiceValues.clarity, event.target.value),
                     }))}
@@ -524,7 +586,7 @@ export default function PublicTestFeedbackForm({ campaignToken }: { campaignToke
                   Comment avez-vous trouvé la durée de ce test ?
                   <select
                     value={campaignReview.duration}
-                    onChange={(event) => setCampaignReview((current) => ({
+                    onChange={(event) => updateCampaignReview((current) => ({
                       ...current,
                       duration: findChoice(campaignReviewChoiceValues.duration, event.target.value),
                     }))}
@@ -540,7 +602,7 @@ export default function PublicTestFeedbackForm({ campaignToken }: { campaignToke
                   Les liens directs vers les pages à tester vous ont-ils aidé ?
                   <select
                     value={campaignReview.links}
-                    onChange={(event) => setCampaignReview((current) => ({
+                    onChange={(event) => updateCampaignReview((current) => ({
                       ...current,
                       links: findChoice(campaignReviewChoiceValues.links, event.target.value),
                     }))}
@@ -556,7 +618,7 @@ export default function PublicTestFeedbackForm({ campaignToken }: { campaignToke
                   Comment évaluez-vous globalement ce test ?
                   <select
                     value={campaignReview.satisfaction}
-                    onChange={(event) => setCampaignReview((current) => ({
+                    onChange={(event) => updateCampaignReview((current) => ({
                       ...current,
                       satisfaction: findChoice(campaignReviewChoiceValues.satisfaction, event.target.value),
                     }))}
@@ -575,7 +637,7 @@ export default function PublicTestFeedbackForm({ campaignToken }: { campaignToke
                     maxLength={2000}
                     rows={4}
                     value={campaignReview.comment}
-                    onChange={(event) => setCampaignReview((current) => ({ ...current, comment: event.target.value }))}
+                    onChange={(event) => updateCampaignReview((current) => ({ ...current, comment: event.target.value }))}
                     placeholder="Qu’est-ce qui vous a aidé, gêné ou manqué pendant ce test ?"
                     className="rounded-lg border border-(--studio-border) px-3 py-2 font-normal"
                   />

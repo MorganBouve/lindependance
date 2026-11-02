@@ -27,16 +27,16 @@ en cours de traitement.
 #### Rétablir le lint complet du dépôt
 
 - **Type :** Bug
-- **Statut :** À traiter — `pnpm lint` échoue le 2 novembre 2026 sur des fichiers inchangés par rapport à `preprod`.
+- **Statut :** Terminé — le 2 novembre 2026, `pnpm lint` termine avec 0 erreur et 23 avertissements.
 - **Priorité proposée :** P1
-- **Comportement observé :** La commande complète termine avec 51 erreurs ESLint et 24 avertissements, notamment dans des scripts, des composants et des tests. Le lint ciblé des fichiers modifiés dans la correction actuelle passe.
+- **Comportement observé :** À la création de cette entrée, la commande complète terminait avec 51 erreurs ESLint et 24 avertissements, ce qui empêchait le contrôle lint du dépôt de réussir.
 - **Comportement attendu :** `pnpm lint` termine sans erreur sur l'ensemble du dépôt afin que la vérification lint puisse servir de contrôle de publication.
 - **Étapes de reproduction :** Exécuter `pnpm lint` à la racine du dépôt.
-- **Impact :** Le contrôle lint complet échoue et masque la validation du code de la branche derrière des erreurs préexistantes hors de son diff.
+- **Impact initial :** Le contrôle lint complet échouait et ne pouvait pas servir de garde-fou de publication.
 - **Critères d’acceptation :**
-  - Les 51 erreurs ESLint reproduites le 2 novembre 2026 sont corrigées ou font l'objet d'une décision explicite et documentée.
-  - `pnpm lint` termine avec un code de sortie nul sur le dépôt complet.
-  - Le lint ciblé des fichiers touchés reste sans erreur.
+  - [x] Les erreurs ESLint reproduites le 2 novembre 2026 sont corrigées.
+  - [x] `pnpm lint` termine avec un code de sortie nul sur le dépôt complet.
+  - [x] Le lint ciblé des fichiers touchés reste sans erreur.
 
 ### Portail client — annulation des rendez-vous
 

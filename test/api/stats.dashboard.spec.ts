@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { z } from 'zod'
 import { GET } from '../../src/app/api/stats/dashboard/route'
 
 // Mock prisma groupBy and counts used by the service
@@ -18,52 +19,68 @@ vi.mock('../../src/auth', () => ({
 import { prisma } from '../../src/lib/prisma'
 import { auth } from '../../src/auth'
 
+// RAISON: vi.mock replaces these typed exports with runtime Vitest mocks.
+const authMock = auth as ReturnType<typeof vi.fn>
+const appointmentFindManyMock = prisma.appointment.findMany as ReturnType<typeof vi.fn>
+const customerCountMock = prisma.customer.count as ReturnType<typeof vi.fn>
+const staffCountMock = prisma.staff.count as ReturnType<typeof vi.fn>
+const dashboardResponseSchema = z.object({
+  summary: z.object({
+    totalRevenue: z.union([z.number(), z.string()]),
+    appointmentCount: z.number(),
+  }),
+  timeseries: z.array(z.object({
+    date: z.string(),
+    revenue: z.union([z.number(), z.string()]),
+  })),
+})
+
 beforeEach(() => {
   vi.resetAllMocks()
 })
 
 describe('/api/stats/dashboard', () => {
   it('returns correct totals when groupBy yields Decimal-like strings', async () => {
-    ;(auth as any).mockResolvedValueOnce({ user: { organizationId: 'org-1' } })
+    authMock.mockResolvedValueOnce({ user: { organizationId: 'org-1' } })
     // The service uses findMany to fetch appointments for the period; mock that
-    ;(prisma.appointment.findMany as any).mockResolvedValueOnce([
+    appointmentFindManyMock.mockResolvedValueOnce([
       { startTime: new Date('2026-03-30T10:00:00Z'), service: { price: 50.5 }, status: 'CONFIRMED', finalPrice: null },
       { startTime: new Date('2026-03-31T12:00:00Z'), service: { price: 100.25 }, status: 'CONFIRMED', finalPrice: null },
       { startTime: new Date('2026-03-31T15:00:00Z'), service: { price: null }, status: 'CONFIRMED', finalPrice: null },
     ])
-    ;(prisma.customer.count as any).mockResolvedValueOnce(3)
-    ;(prisma.staff.count as any).mockResolvedValueOnce(2)
+    customerCountMock.mockResolvedValueOnce(3)
+    staffCountMock.mockResolvedValueOnce(2)
 
     const req = new Request('http://localhost/api/stats/dashboard?start=2026-03-30&end=2026-03-31')
     const res = await GET(req)
-    const body = await (res as any).json()
+    const body = dashboardResponseSchema.parse(await res.json())
 
     expect(Number(body.summary.totalRevenue)).toBeCloseTo(150.75)
     expect(body.summary.appointmentCount).toBe(3)
     expect(Array.isArray(body.timeseries)).toBe(true)
-    const day30 = body.timeseries.find((d: any) => d.date === '2026-03-30')
-    expect(Number(day30.revenue)).toBeCloseTo(50.5)
+    const day30 = body.timeseries.find(({ date }) => date === '2026-03-30')
+    expect(day30).toBeDefined()
+    expect(Number(day30?.revenue)).toBeCloseTo(50.5)
   })
 
   it('enforces organization isolation', async () => {
     // auth returns org-A; groupBy mock should receive where.organizationId === 'org-A'
-    const findManyMock = (prisma.appointment.findMany as any)
-    findManyMock.mockImplementationOnce((opts: any) => {
-      if (opts.where.organizationId !== 'org-A') throw new Error('organization leak')
+    appointmentFindManyMock.mockImplementationOnce((options: { where?: { organizationId?: string } }) => {
+      if (options.where?.organizationId !== 'org-A') throw new Error('organization leak')
       return []
     })
-    ;(auth as any).mockResolvedValueOnce({ user: { organizationId: 'org-A' } })
-    ;(prisma.customer.count as any).mockResolvedValueOnce(0)
-    ;(prisma.staff.count as any).mockResolvedValueOnce(0)
+    authMock.mockResolvedValueOnce({ user: { organizationId: 'org-A' } })
+    customerCountMock.mockResolvedValueOnce(0)
+    staffCountMock.mockResolvedValueOnce(0)
 
     const req = new Request('http://localhost/api/stats/dashboard')
     const res = await GET(req)
-    const body = await (res as any).json()
+    const body = dashboardResponseSchema.parse(await res.json())
     expect(body).toBeDefined()
   })
 
   it('retourne 401 si non authentifié', async () => {
-    ;(auth as any).mockResolvedValueOnce(null)
+    authMock.mockResolvedValueOnce(null)
 
     const req = new Request('http://localhost/api/stats/dashboard')
     const res = await GET(req)
@@ -72,7 +89,7 @@ describe('/api/stats/dashboard', () => {
   })
 
   it('retourne 403 si session sans organizationId', async () => {
-    ;(auth as any).mockResolvedValueOnce({ user: {} })
+    authMock.mockResolvedValueOnce({ user: {} })
 
     const req = new Request('http://localhost/api/stats/dashboard')
     const res = await GET(req)
@@ -81,27 +98,25 @@ describe('/api/stats/dashboard', () => {
   })
 
   it('retourne 400 si les paramètres de date sont invalides — L26', async () => {
-    ;(auth as any).mockResolvedValueOnce({ user: { organizationId: 'org-1' } })
+    authMock.mockResolvedValueOnce({ user: { organizationId: 'org-1' } })
 
     const req = new Request('http://localhost/api/stats/dashboard?start=NOT_A_DATE&end=ALSO_INVALID')
     const res = await GET(req)
 
     expect(res.status).toBe(400)
-    const body = await res.json()
+    const body = z.object({ error: z.string() }).parse(await res.json())
     expect(body.error).toMatch(/invalid date/i)
   })
 
   it('retourne 500 si le service lance une exception — L35', async () => {
-    ;(auth as any).mockResolvedValueOnce({ user: { organizationId: 'org-1' } })
-    ;(prisma.appointment.findMany as any).mockRejectedValueOnce(new Error('DB connection lost'))
+    authMock.mockResolvedValueOnce({ user: { organizationId: 'org-1' } })
+    appointmentFindManyMock.mockRejectedValueOnce(new Error('DB connection lost'))
 
     const req = new Request('http://localhost/api/stats/dashboard')
     const res = await GET(req)
 
     expect(res.status).toBe(500)
-    const body = await res.json()
+    const body = z.object({ error: z.string() }).parse(await res.json())
     expect(body.error).toBe('Internal server error')
   })
 })
-
-

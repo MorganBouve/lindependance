@@ -8,12 +8,10 @@ async function main() {
     const appts = await prisma.appointment.findMany({ include: { service: true } })
     let updated = 0
     for (const a of appts) {
-      const currentPrice = (a as any).price ?? 0
-      const svcPrice = (a as any).service?.price ?? null
-      // If price is falsy (0 or null) and service has a price, copy it
-      if ((currentPrice === 0 || currentPrice === null) && svcPrice != null) {
-        // svcPrice may be Decimal | number | string; pass through as-is
-        await prisma.appointment.update({ where: { id: a.id }, data: { price: svcPrice as any } })
+      const currentPrice = a.price
+      const servicePrice = a.service?.price
+      if (currentPrice.isZero() && servicePrice != null) {
+        await prisma.appointment.update({ where: { id: a.id }, data: { price: servicePrice } })
         updated++
       }
     }
@@ -27,4 +25,3 @@ async function main() {
 }
 
 if (require.main === module) main()
-

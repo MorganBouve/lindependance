@@ -27,11 +27,6 @@ export function CustomerPicker({ customers, onSelectAction, selectedId, labelled
     // keep created customer locally so trigger shows name before parent list refreshes
     const [localCustomer, setLocalCustomer] = React.useState<Customer | null>(null)
 
-    // Reset localCustomer when selectedId is cleared from outside (e.g. form reset)
-    React.useEffect(() => {
-        if (!selectedId) setLocalCustomer(null)
-    }, [selectedId])
-
     // inline creation form state
     const [creating, setCreating] = React.useState(false)
     const [createFirst, setCreateFirst] = React.useState("")

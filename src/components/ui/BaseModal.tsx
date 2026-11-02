@@ -14,14 +14,9 @@ interface BaseModalProps {
     maxWidth?: string
 }
 
-let GLOBAL_MODAL_COUNTER = 0
-
 export default function BaseModal({ isOpen, onClose, title, children, maxWidth = "32rem" }: BaseModalProps) {
     const dragControls = useDragControls()
-    const modalId = React.useMemo(() => {
-        GLOBAL_MODAL_COUNTER += 1
-        return `modal-${Date.now()}-${GLOBAL_MODAL_COUNTER}`
-    }, [])
+    const modalId = React.useId()
 
     const contentRef = React.useRef<HTMLDivElement | null>(null)
 

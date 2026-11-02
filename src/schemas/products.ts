@@ -17,6 +17,19 @@ export const ProductCreateSchema = z.object({
 
 export const ProductUpdateSchema = ProductCreateSchema.omit({ stock: true }).partial().strict()
 
+export const ProductListSchema = z.array(z.object({
+  id: z.string().min(1),
+  name: z.string(),
+  priceTTC: z.number(),
+  taxRate: z.number(),
+  stock: z.number().int(),
+  stockMinimum: z.number().int(),
+  iconName: z.enum(VALID_ICONS),
+  organizationId: z.string().min(1),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+}))
+
 const StockMovementNoteSchema = z.string().trim().max(250).optional()
 const StockMovementQuantitySchema = z.number().int().safe().min(-MAX_STOCK_QUANTITY).max(MAX_STOCK_QUANTITY)
 const STOCK_MOVEMENT_TYPES = ['INITIAL', 'RECEIPT', 'ADJUSTMENT', 'SALE'] as const

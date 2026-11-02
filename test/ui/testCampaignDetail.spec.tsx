@@ -112,6 +112,20 @@ describe('TestCampaignDetail', () => {
     expect(screen.getByText(/le suivi affiche le profil déclaré et le jour de réception/i)).toBeInTheDocument()
   })
 
+  it('does not show stale campaign data when the next campaign cannot be loaded', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(campaignDetails('ACTIVE')), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: 'Campagne introuvable.' }), { status: 404 }))
+    vi.stubGlobal('fetch', fetchMock)
+    const { rerender } = render(<TestCampaignDetail campaignId="campaign-1" />)
+
+    expect(await screen.findByRole('heading', { name: 'Recette réservation' })).toBeInTheDocument()
+    rerender(<TestCampaignDetail campaignId="campaign-2" />)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Campagne introuvable.')
+    expect(screen.queryByRole('heading', { name: 'Recette réservation' })).not.toBeInTheDocument()
+  })
+
   it('downloads the current campaign feedback as a JSON file', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
       campaign: {

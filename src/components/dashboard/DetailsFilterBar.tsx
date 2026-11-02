@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState } from 'react'
 import { computeDateRange } from '@/lib/computeDateRange'
 
 export default function DetailsFilterBar({ currentFilter }: { currentFilter: 'all' | 'services' | 'products' }) {
@@ -34,12 +34,10 @@ export default function DetailsFilterBar({ currentFilter }: { currentFilter: 'al
     router.push(`${pathname}?${params.toString()}`)
   }
 
-  const computeRange = useCallback((period: string) => computeDateRange(period), [])
-
   const setPeriodAndRange = (p: string) => {
     setPeriod(p)
     const params = new URLSearchParams(Array.from(searchParams.entries()))
-    const range = computeRange(p)
+    const range = computeDateRange(p)
     params.set('start', range.start)
     params.set('end', range.end)
     // update local inputs to match the selected period
@@ -74,13 +72,6 @@ export default function DetailsFilterBar({ currentFilter }: { currentFilter: 'al
     }
   }
 
-  // When period changes, update the start/end inputs to reflect the computed range
-  useEffect(() => {
-    const range = computeRange(period)
-    setStartInput(formatIsoToLocalInput(range.start))
-    setEndInput(formatIsoToLocalInput(range.end))
-  }, [period, computeRange])
-
   return (
     // Use wrapping layout so controls don't overflow on small screens
     <div className="flex flex-wrap gap-2 mb-4 items-center">
@@ -92,7 +83,7 @@ export default function DetailsFilterBar({ currentFilter }: { currentFilter: 'al
       <div className="ml-4 flex flex-wrap items-center gap-2 text-sm">
         <label className="text-gray-500 mr-2">Période:</label>
         <select value={period} onChange={(e) => setPeriodAndRange(e.target.value)} className="px-3 py-1 rounded bg-white border">
-          <option value="today">Aujourd'hui</option>
+          <option value="today">Aujourd&apos;hui</option>
           <option value="week">Cette semaine</option>
           <option value="month">Mois en cours</option>
           <option value="30days">30 derniers jours</option>
@@ -157,7 +148,6 @@ export default function DetailsFilterBar({ currentFilter }: { currentFilter: 'al
     </div>
   )
 }
-
 
 
 

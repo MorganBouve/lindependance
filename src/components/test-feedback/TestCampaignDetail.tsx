@@ -72,6 +72,7 @@ function scenarioGroupLabel(id: TestScenarioGroupId): string {
 
 export default function TestCampaignDetail({ campaignId }: { campaignId: string }) {
   const [data, setData] = useState<CampaignDetail | null>(null)
+  const [dataCampaignId, setDataCampaignId] = useState('')
   const [loading, setLoading] = useState(true)
   const [settledCampaignId, setSettledCampaignId] = useState('')
   const [closing, setClosing] = useState(false)
@@ -102,6 +103,7 @@ export default function TestCampaignDetail({ campaignId }: { campaignId: string 
         const campaign = await fetchCampaign()
         if (active) {
           setData(campaign)
+          setDataCampaignId(campaignId)
           setError('')
         }
       } catch (cause: unknown) {
@@ -126,6 +128,7 @@ export default function TestCampaignDetail({ campaignId }: { campaignId: string 
     try {
       const campaign = await fetchCampaign()
       setData(campaign)
+      setDataCampaignId(campaignId)
     } catch (cause: unknown) {
       setError(cause instanceof Error ? cause.message : 'Impossible de charger le suivi')
     } finally {
@@ -145,6 +148,8 @@ export default function TestCampaignDetail({ campaignId }: { campaignId: string 
       || scenario.title.toLocaleLowerCase('fr-FR').includes(query)
     return matchesProfile && matchesResult && matchesSearch
   }), [data?.scenarios, profileFilter, resultFilter, search])
+
+  const currentData = dataCampaignId === campaignId ? data : null
 
   async function copyLink() {
     if (!data) return
@@ -208,10 +213,10 @@ export default function TestCampaignDetail({ campaignId }: { campaignId: string 
   }
 
   if (loading || settledCampaignId !== campaignId) return <p role="status" className="p-8 text-sm text-(--studio-muted)">Chargement du suivi…</p>
-  if (error && !data) return <p role="alert" className="m-6 rounded-xl bg-red-50 p-4 text-sm text-red-800">{error}</p>
-  if (!data) return null
+  if (error && !currentData) return <p role="alert" className="m-6 rounded-xl bg-red-50 p-4 text-sm text-red-800">{error}</p>
+  if (!currentData) return null
 
-  const { campaign, progress } = data
+  const { campaign, progress } = currentData
   const testerUrl = `${origin}/retour-test/${campaign.publicToken}`
   return (
     <section className="mx-auto max-w-6xl space-y-7 p-5 md:p-10">
@@ -333,9 +338,9 @@ export default function TestCampaignDetail({ campaignId }: { campaignId: string 
 
       <section aria-labelledby="feedback-history-title" className="space-y-3">
         <h2 id="feedback-history-title" className="font-serif text-2xl text-(--studio-text)">Historique complet des retours</h2>
-        {data.history.length === 0 && <p className="rounded-xl bg-white p-5 text-sm text-(--studio-muted)">Aucun retour reçu pour le moment.</p>}
+        {currentData.history.length === 0 && <p className="rounded-xl bg-white p-5 text-sm text-(--studio-muted)">Aucun retour reçu pour le moment.</p>}
         <div className="grid gap-3">
-          {data.history.map((entry) => (
+          {currentData.history.map((entry) => (
             <article key={entry.id} className="rounded-xl border border-(--studio-border) bg-white p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h3 className="font-medium text-(--studio-text)">{entry.scenarioId} — {entry.scenarioTitle}</h3>
@@ -355,11 +360,11 @@ export default function TestCampaignDetail({ campaignId }: { campaignId: string 
           <h2 id="campaign-reviews-title" className="font-serif text-2xl text-(--studio-text)">Avis général des testeurs</h2>
           <p className="mt-1 text-sm text-(--studio-muted)">Réponses sur la clarté, la durée et l’expérience de la campagne.</p>
         </div>
-        {data.campaignReviews.length === 0 && (
+        {currentData.campaignReviews.length === 0 && (
           <p className="rounded-xl bg-white p-5 text-sm text-(--studio-muted)">Aucun avis général reçu pour le moment.</p>
         )}
         <div className="grid gap-3">
-          {data.campaignReviews.map((review) => (
+          {currentData.campaignReviews.map((review) => (
             <article key={review.id} className="rounded-xl border border-(--studio-border) bg-white p-4">
               <p className="text-xs text-(--studio-muted)">
                 Profil déclaré : {review.profile === 'ADMIN' ? 'Administration' : 'Utilisateur'} · {formatFeedbackDate(review.createdAt)}
