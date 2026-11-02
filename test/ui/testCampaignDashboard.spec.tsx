@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import TestCampaignDashboard from '@/components/test-feedback/TestCampaignDashboard'
 
 const domainSelection = vi.hoisted(() => ({ ids: ['org-1'] as string[] }))
@@ -16,7 +16,32 @@ const emptyDashboard = {
   campaigns: [],
 }
 
+const activeDashboard = {
+  organizations: emptyDashboard.organizations,
+  campaigns: [{
+    id: 'campaign-1',
+    name: 'Campagne active',
+    scenarioGroups: ['ONLINE_BOOKING'],
+    profiles: ['USER'],
+    status: 'ACTIVE',
+    publicToken: 'public-token',
+    createdAt: '2026-10-04T09:00:00.000Z',
+    closedAt: null,
+    organizationName: 'Osez le T’re',
+    progress: {
+      total: 1,
+      tested: 0,
+      passed: 0,
+      failed: 0,
+      blocked: 0,
+      remaining: 1,
+      currentResults: [],
+    },
+  }],
+}
+
 afterEach(() => {
+  vi.restoreAllMocks()
   vi.unstubAllGlobals()
   domainSelection.ids = ['org-1']
 })
@@ -186,5 +211,41 @@ describe('TestCampaignDashboard', () => {
     resolveRecipients(new Response(JSON.stringify([]), { status: 200 }))
 
     expect(await screen.findByText(/Aucun compte ou client/)).toBeInTheDocument()
+  })
+
+  it('shows progress while closing a campaign', async () => {
+    let resolveClose: (response: Response) => void = (_response) => {
+      throw new Error('La clôture de la campagne ne démarre pas')
+    }
+    let campaignListRequests = 0
+    const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.includes('/recipients?')) return Promise.resolve(new Response('[]', { status: 200 }))
+      if (url.startsWith('/api/test-campaigns?')) {
+        campaignListRequests += 1
+        const dashboard = campaignListRequests === 1 ? activeDashboard : emptyDashboard
+        return Promise.resolve(new Response(JSON.stringify(dashboard), { status: 200 }))
+      }
+      if (url === '/api/test-campaigns/campaign-1' && init?.method === 'PATCH') {
+        return new Promise((resolve) => { resolveClose = resolve })
+      }
+      return Promise.resolve(new Response('{}', { status: 200 }))
+    })
+    vi.stubGlobal('fetch', fetchMock)
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+
+    render(<TestCampaignDashboard />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Clôturer' }))
+
+    const pendingButton = screen.getByRole('button', { name: 'Clôture en cours…' })
+    expect(pendingButton).toBeDisabled()
+    expect(pendingButton).toHaveAttribute('aria-busy', 'true')
+
+    await act(async () => {
+      resolveClose(new Response(JSON.stringify({ status: 'CLOSED' }), { status: 200 }))
+    })
+    await waitFor(() => {
+      expect(screen.queryByRole('heading', { name: 'Campagne active' })).not.toBeInTheDocument()
+    })
   })
 })

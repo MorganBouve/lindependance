@@ -1,13 +1,15 @@
 "use client"
 
 import React, { useState, useEffect } from 'react'
-import { Plus, Trash2, Edit2, Save, X, Clock, Euro } from 'lucide-react'
+import { Plus, Trash2, Edit2, Save, X, Clock, Euro, Loader2 } from 'lucide-react'
 import type { Service as ServiceType } from '@/types/models'
 
 export default function ServiceManager() {
     const [services, setServices] = useState<ServiceType[]>([])
     const [isEditing, setIsEditing] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(false)
+    const [deletingServiceId, setDeletingServiceId] = useState<string | null>(null)
+    const [actionError, setActionError] = useState('')
 
     const [formData, setFormData] = useState<Partial<ServiceType>>({
         name: '',
@@ -66,6 +68,24 @@ export default function ServiceManager() {
     const cancelEdit = () => {
         setIsEditing(null)
         setFormData({ name: '', durationMinutes: 30, price: 0, color: '#C5908E' })
+    }
+
+    const deleteService = async (service: ServiceType) => {
+        if (deletingServiceId || !confirm("Supprimer ?")) return
+        setDeletingServiceId(service.id)
+        setActionError('')
+        try {
+            const response = await fetch(`/api/services?id=${encodeURIComponent(service.id)}`, {
+                method: 'DELETE',
+                credentials: 'include',
+            })
+            if (!response.ok) throw new Error('Impossible de supprimer cette prestation.')
+            await fetchServices()
+        } catch {
+            setActionError('Impossible de supprimer cette prestation. Vérifiez votre connexion ou réessayez.')
+        } finally {
+            setDeletingServiceId(null)
+        }
     }
 
     return (
@@ -143,6 +163,7 @@ export default function ServiceManager() {
             </div>
 
             {/* LISTE DES SERVICES */}
+            {actionError && <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-700">{actionError}</p>}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {services.map(service => (
                     <div key={service.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between group hover:border-rose-200 transition-all">
@@ -160,13 +181,19 @@ export default function ServiceManager() {
                             <button type="button" aria-label={`Modifier ${service.name}`} onClick={() => startEdit(service)} className="p-2 text-slate-700 hover:text-amber-800 hover:bg-amber-50 rounded-lg">
                                 <Edit2 size={16} />
                             </button>
-                            <button type="button" onClick={async () => {
-                                if(confirm("Supprimer ?")) {
-                                    await fetch(`/api/services?id=${service.id}`, { method: 'DELETE', credentials: 'include' });
-                                    fetchServices();
-                                }
-                            }} aria-label={`Supprimer ${service.name}`} className="p-2 text-slate-700 hover:text-rose-700 hover:bg-rose-50 rounded-lg">
-                                <Trash2 size={16} />
+                            <button
+                                type="button"
+                                onClick={() => void deleteService(service)}
+                                disabled={deletingServiceId !== null}
+                                aria-label={deletingServiceId === service.id
+                                    ? `Suppression de ${service.name} en cours`
+                                    : `Supprimer ${service.name}`}
+                                aria-busy={deletingServiceId === service.id}
+                                className="p-2 text-slate-700 hover:text-rose-700 hover:bg-rose-50 rounded-lg disabled:opacity-50"
+                            >
+                                {deletingServiceId === service.id
+                                    ? <Loader2 size={16} aria-hidden="true" className="animate-spin" />
+                                    : <Trash2 size={16} />}
                             </button>
                         </div>
                     </div>

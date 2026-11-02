@@ -463,6 +463,12 @@ client doit d'abord être créé par le staff.
 - Connexion sans mot de passe par code OTP email ; le navigateur peut proposer
   de remplir le code, mais l'interface doit rester utilisable sans
   autoremplissage.
+- Les boutons d'envoi et de vérification du code affichent clairement leur
+  progression, exposent leur état occupé et empêchent une nouvelle soumission
+  pendant la requête ; après une erreur, le parcours reste utilisable.
+- Les liens « Mes rendez-vous » et « Accès équipe » restent des liens de
+  navigation, avec une apparence compacte de bouton, un état d'appui visible et
+  un focus clavier discernable.
 - Formulaire de réservation en 3 étapes max (Service → Créneau → Confirmation),
   avec état de chargement clair.
 - Après création effective du RDV, envoyer au client un email de confirmation

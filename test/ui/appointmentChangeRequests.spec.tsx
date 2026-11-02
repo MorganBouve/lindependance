@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import AppointmentChangeRequests from '@/components/AppointmentChangeRequests'
 
 const requestList = {
@@ -78,6 +78,32 @@ describe('AppointmentChangeRequests', () => {
           body: JSON.stringify({ reviewReason: 'Créneau non disponible' }),
         }),
       )
+    })
+  })
+
+  it('shows that a rejection is being processed until the request finishes', async () => {
+    let resolveReview: (value: Response) => void = (_value) => {
+      throw new Error('La décision de refus ne démarre pas')
+    }
+    const fetchMock = vi.mocked(fetch)
+    fetchMock.mockResolvedValueOnce(response(requestList))
+    fetchMock.mockImplementationOnce(() => new Promise((resolve) => {
+      resolveReview = resolve
+    }))
+
+    render(<AppointmentChangeRequests />)
+    expect(await screen.findByText('Camille Martin')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Refuser' }))
+
+    const pendingButton = screen.getByRole('button', { name: 'Refus en cours…' })
+    expect(pendingButton).toBeDisabled()
+    expect(pendingButton).toHaveAttribute('aria-busy', 'true')
+
+    await act(async () => {
+      resolveReview(response({ ok: true, notificationSent: true }))
+    })
+    await waitFor(() => {
+      expect(screen.queryByText('Camille Martin')).not.toBeInTheDocument()
     })
   })
 

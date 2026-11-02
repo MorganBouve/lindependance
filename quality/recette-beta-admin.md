@@ -53,20 +53,22 @@ date : `________` · navigateur/appareil : `________` · organisation : `_______
 
 ### Accès, périmètre et notifications
 
-#### [x] ADM-01 — Voir uniquement les demandes de votre salon
+#### [ ] ADM-01 — Voir uniquement les demandes de votre salon
 **Priorité : P0 · Exigence :** [Req: formal — `customer-portal.md`, sécurité et `customer-portal-phase-3.md`]
 
 **Étapes :** dans le champ du mot de passe, appuyez sur Entrée pour vous
-connecter à l'espace de gestion de votre salon, puis ouvrez la liste des
-demandes de changement.
+connecter à l'espace de gestion de votre salon. Si la connexion prend un
+instant, observez le bouton, puis ouvrez la liste des demandes de changement.
 
-**Attendu :** la touche Entrée lance la connexion du formulaire actif. Seules
-les demandes concernant votre salon sont visibles. L'espace de gestion n'est
-pas accessible depuis un compte client.
+**Attendu :** la touche Entrée lance la connexion du formulaire actif. Pendant
+la connexion, le bouton indique que la demande est en cours et empêche une
+nouvelle soumission ; après une erreur, il redevient utilisable. Seules les
+demandes concernant votre salon sont visibles. L'espace de gestion n'est pas
+accessible depuis un compte client.
 
 **Automatisé :** `test/api/appointment-change-requests.spec.ts`,
 `test/api/appointment-portal-count.spec.ts`,
-`test/proxy.portal.spec.ts`.
+`test/proxy.portal.spec.ts`, `test/ui/signin.spec.tsx`.
 **Résultat / preuve :** PASS — 28/10/2026 en préproduction, deux demandes QA
 ont été créées dans deux salons distincts. Le compte staff du Salon recette
 réel n'a affiché que sa demande ; le compte staff d'Osez l'Etre n'a affiché
@@ -164,12 +166,14 @@ praticien inactif et course réelle restent à vérifier en bêta.
 **Étapes :** depuis un compte client vérifié avec `EMAIL-CHANGE-REQUEST`,
 envoyez une demande de changement. Refusez-la en expliquant la raison, puis
 vérifiez l'e-mail reçu. Si une autre demande sans motif est déjà disponible,
-refusez-la aussi et vérifiez que son message reste clair.
+refusez-la aussi et vérifiez que son message reste clair. Pendant le traitement,
+observez le bouton de refus.
 
 **Attendu :** la demande est refusée et le rendez-vous garde son horaire. Le
 client voit que le changement n'a pas été accepté et peut lire votre
 commentaire, s'il y en a un. Il reçoit un e-mail de refus ; le motif y figure
-lorsqu'il est renseigné.
+lorsqu'il est renseigné. Le bouton indique que le refus est en cours et ne
+peut pas être actionné une seconde fois avant la réponse.
 
 **Automatisé :** `test/api/appointment-change-requests.spec.ts`,
 `test/services/customerPortalChangeRequests.spec.ts`,

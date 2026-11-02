@@ -69,6 +69,7 @@ function scenarioGroupLabel(id: TestScenarioGroupId): string {
 export default function TestCampaignDetail({ campaignId }: { campaignId: string }) {
   const [data, setData] = useState<CampaignDetail | null>(null)
   const [loading, setLoading] = useState(true)
+  const [closing, setClosing] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [origin, setOrigin] = useState('')
@@ -154,7 +155,10 @@ export default function TestCampaignDetail({ campaignId }: { campaignId: string 
   }
 
   async function closeCampaign() {
+    if (closing) return
     if (!window.confirm('Clôturer cette campagne ? Les testeurs ne pourront plus envoyer de résultats.')) return
+    setClosing(true)
+    setError('')
     try {
       const response = await fetch(`/api/test-campaigns/${campaignId}`, {
         method: 'PATCH',
@@ -166,6 +170,8 @@ export default function TestCampaignDetail({ campaignId }: { campaignId: string 
       await loadCampaign()
     } catch (cause: unknown) {
       setError(cause instanceof Error ? cause.message : 'Impossible de clôturer la campagne')
+    } finally {
+      setClosing(false)
     }
   }
 
@@ -200,8 +206,14 @@ export default function TestCampaignDetail({ campaignId }: { campaignId: string 
             Télécharger les retours (JSON)
           </button>
           {campaign.status === 'ACTIVE' && (
-            <button type="button" onClick={() => void closeCampaign()} className="rounded-lg px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50">
-              Clôturer la campagne
+            <button
+              type="button"
+              onClick={() => void closeCampaign()}
+              disabled={closing}
+              aria-busy={closing}
+              className="rounded-lg px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+            >
+              {closing ? 'Clôture en cours…' : 'Clôturer la campagne'}
             </button>
           )}
         </div>

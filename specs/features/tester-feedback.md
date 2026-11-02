@@ -54,8 +54,10 @@ qualité ; l'administrateur technique suit les résultats dans un tableau de bor
   La vue détaillée regroupe les résultats par scénario ; pour la progression et
   le statut courant, seul le résultat le plus récent de chaque couple
   profil/scénario compte. L'historique conserve tous les envois.
-- Le `TECH_ADMIN` peut fermer une campagne ; ses liens de test deviennent
-  alors en lecture seule/indisponibles pour les nouvelles soumissions.
+- Le `TECH_ADMIN` peut fermer une campagne ; le bouton indique la clôture en
+  cours et bloque les clics répétés pendant la requête. Une fois la clôture
+  confirmée, les liens de test deviennent en lecture seule/indisponibles pour
+  les nouvelles soumissions.
 - Formulaire public sans compte, accessible uniquement par le lien de campagne.
 - Le testeur choisit son rôle déclaratif : « Client du salon » (`USER`) ou
   « Gérant du salon » (`ADMIN`). Ce choix sert uniquement à classer le retour

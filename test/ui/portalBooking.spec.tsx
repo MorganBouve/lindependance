@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import PortalBooking from '@/components/customer-portal/PortalBooking'
 import { DEFAULT_ORGANIZATION_BRANDING } from '@/domain/branding/logoSettings'
 import { getPortalBookingWindow } from '@/domain/customer-portal/scheduling'
@@ -53,7 +53,7 @@ describe('PortalBooking', () => {
     expect(screen.getByRole('link', { name: 'contact@salon-elise.fr' })).toHaveAttribute('href', 'mailto:contact@salon-elise.fr')
   })
 
-  it('offers a subtle link to the staff sign-in page', async () => {
+  it('offers compact button-styled links to appointments and staff sign-in', async () => {
     render(
       <PortalBooking
         organizationSlug="osezletre"
@@ -66,8 +66,81 @@ describe('PortalBooking', () => {
     )
 
     expect(await screen.findByText('Salon Élise')).toBeInTheDocument()
-    expect(await screen.findByRole('link', { name: 'Accès équipe' })).toHaveAttribute('href', '/auth/signin')
+    const appointmentsLink = screen.getByRole('link', { name: 'Mes rendez-vous' })
+    expect(appointmentsLink).toHaveAttribute('href', '/portail/osezletre/mes-rdv')
+    const staffLink = screen.getByRole('link', { name: 'Accès équipe' })
+    expect(staffLink).toHaveAttribute('href', '/auth/signin')
+    for (const link of [appointmentsLink, staffLink]) {
+      expect(link).toHaveClass('min-h-11', 'rounded-lg', 'text-xs', 'active:brightness-90', 'focus-visible:ring-2')
+    }
     expect(screen.getByText('Pour un premier rendez-vous, contactez le salon avant de réserver.')).toBeInTheDocument()
+  })
+
+  it('shows progress while requesting and verifying a customer code', async () => {
+    let resolveCodeRequest: (value: Response) => void = (_value) => {
+      throw new Error('La demande de code ne démarre pas')
+    }
+    let resolveCodeVerification: (value: Response) => void = (_value) => {
+      throw new Error('La vérification du code ne démarre pas')
+    }
+    let customerFetchCount = 0
+    vi.mocked(fetch).mockImplementation((input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.endsWith('/services')) return Promise.resolve(response([]))
+      if (url.endsWith('/praticiens')) return Promise.resolve(response([]))
+      if (url.endsWith('/customers')) {
+        customerFetchCount += 1
+        return Promise.resolve(customerFetchCount === 1
+          ? response({ error: 'Unauthorized' }, 401)
+          : response([{ id: 'customer-1', firstName: 'Client', lastName: 'Recette' }]))
+      }
+      if (url.endsWith('/request-code')) {
+        return new Promise((resolve) => { resolveCodeRequest = resolve })
+      }
+      if (url.endsWith('/verify-code')) {
+        return new Promise((resolve) => { resolveCodeVerification = resolve })
+      }
+      return Promise.resolve(response({ timezone: 'Europe/Paris', slots: [] }))
+    })
+
+    render(
+      <PortalBooking
+        organizationSlug="osezletre"
+        organizationTimezone="Europe/Paris"
+        organizationName="Salon Élise"
+        branding={DEFAULT_ORGANIZATION_BRANDING}
+        portalContactPhone={null}
+        portalContactEmail={null}
+      />,
+    )
+
+    const emailInput = await screen.findByLabelText('Email enregistré sur votre fiche client')
+    fireEvent.change(emailInput, { target: { value: 'client@example.test' } })
+    const authForm = emailInput.closest('form')
+    if (!authForm) throw new Error('Customer authentication form is missing')
+    fireEvent.submit(authForm)
+
+    const requestButton = screen.getByRole('button', { name: 'Envoi du code…' })
+    expect(requestButton).toBeDisabled()
+    expect(requestButton).toHaveAttribute('aria-busy', 'true')
+
+    await act(async () => {
+      resolveCodeRequest(response({ ok: true }))
+    })
+
+    const codeInput = await screen.findByLabelText('Code de vérification')
+    fireEvent.change(codeInput, { target: { value: '123456' } })
+    fireEvent.submit(authForm)
+
+    const verifyButton = screen.getByRole('button', { name: 'Vérification en cours…' })
+    expect(verifyButton).toBeDisabled()
+    expect(verifyButton).toHaveAttribute('aria-busy', 'true')
+
+    await act(async () => {
+      resolveCodeVerification(response({ ok: true }))
+    })
+
+    expect(await screen.findByText('Adresse email vérifiée')).toBeInTheDocument()
   })
 
   it('restores the verified customer session after a successful code check', async () => {

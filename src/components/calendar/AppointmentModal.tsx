@@ -40,7 +40,7 @@ export default function AppointmentModal({
     selectedCustomer, setSelectedCustomer, serviceId, note, setNote,
     startTime, duration, date, setDate, customerPackages, usePackage, setUsePackage,
     selectedCustomerPackageId, setSelectedCustomerPackageId,
-    isSaving, collision, setCollision, confirmDeleteOpen, setConfirmDeleteOpen,
+    isSaving, isDeleting, collision, setCollision, confirmDeleteOpen, setConfirmDeleteOpen,
     HORAIRE_OUVERTURE, HORAIRE_FERMETURE, isTimeOutOfBounds, isFormInvalid,
     getEndTimeLabel, handleServiceChange, handleSave, handleDelete, handleConfirmDelete,
     setStartTime, setDuration,
@@ -176,14 +176,20 @@ export default function AppointmentModal({
               <div className="text-[12px] text-red-600 flex items-center gap-2"><AlertTriangle size={14} /> Conflit détecté — choisissez un autre horaire</div>
             )}
             {initialData?.id && (
-              <button type="button" onClick={handleDelete} className="text-red-700 text-[11px] font-bold flex items-center gap-1.5 hover:opacity-80 transition-opacity">
-                <Trash2 size={14} /> SUPPRIMER
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={isSaving}
+                aria-busy={isDeleting}
+                className="text-red-700 text-[11px] font-bold flex items-center gap-1.5 hover:opacity-80 transition-opacity disabled:opacity-50"
+              >
+                <Trash2 size={14} /> {isDeleting ? 'SUPPRESSION EN COURS…' : 'SUPPRIMER'}
               </button>
             )}
               <div className="flex gap-2 ml-auto">
                 <button data-testid="close-modal" type="button" onClick={attemptClose} className="px-5 py-2 text-slate-700 font-bold text-sm">ANNULER</button>
-              <button type="submit" disabled={isFormInvalid || isSaving} className="px-7 py-3 bg-studio-action text-white rounded-full font-bold text-sm flex items-center gap-2 shadow-lg shadow-studio-action/20 disabled:opacity-50 disabled:cursor-not-allowed">
-                {isSaving ? "..." : <><Zap size={14} /> CONFIRMER</>}
+              <button type="submit" disabled={isFormInvalid || isSaving} aria-busy={isSaving} className="px-7 py-3 bg-studio-action text-white rounded-full font-bold text-sm flex items-center gap-2 shadow-lg shadow-studio-action/20 disabled:opacity-50 disabled:cursor-not-allowed">
+                {isSaving ? "ENREGISTREMENT EN COURS…" : <><Zap size={14} /> CONFIRMER</>}
               </button>
             </div>
           </div>

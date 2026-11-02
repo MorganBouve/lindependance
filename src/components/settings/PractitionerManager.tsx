@@ -350,9 +350,10 @@ export default function PractitionerManager() {
                     data-testid={`reactivate-practitioner-${practitioner.id}`}
                     onClick={() => void reactivatePractitioner(practitioner)}
                     disabled={statusChangeId === practitioner.id}
+                    aria-busy={statusChangeId === practitioner.id}
                     className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                   >
-                    Réactiver
+                    {statusChangeId === practitioner.id ? 'Réactivation en cours…' : 'Réactiver'}
                   </button>
                 </li>
               ))}

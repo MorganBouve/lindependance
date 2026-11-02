@@ -11,6 +11,8 @@ type Practitioner = { id: string; firstName: string; lastName: string }
 type Customer = { id: string; firstName: string; lastName: string }
 type Slot = { start: string; end: string }
 
+const portalNavigationButtonClassName = 'inline-flex min-h-11 items-center rounded-lg border border-indigo-200 bg-white px-3 py-1.5 text-xs font-medium text-indigo-700 shadow-sm transition-[background-color,filter] hover:bg-indigo-50 active:brightness-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2'
+
 async function readError(response: Response, fallback: string): Promise<string> {
   const body: unknown = await response.json().catch(() => null)
   return body && typeof body === 'object' && 'error' in body && typeof body.error === 'string'
@@ -51,6 +53,7 @@ export default function PortalBooking({
   const [loading, setLoading] = useState(true)
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [authSubmitting, setAuthSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [authError, setAuthError] = useState('')
 
@@ -156,6 +159,8 @@ export default function PortalBooking({
 
   async function requestCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (authSubmitting) return
+    setAuthSubmitting(true)
     setAuthError('')
     try {
       const response = await fetch('/api/portail/auth/request-code', {
@@ -167,11 +172,15 @@ export default function PortalBooking({
       setCodeRequested(true)
     } catch (requestError: unknown) {
       setAuthError(requestError instanceof Error ? requestError.message : 'Impossible de demander un code.')
+    } finally {
+      setAuthSubmitting(false)
     }
   }
 
   async function verifyCode(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (authSubmitting) return
+    setAuthSubmitting(true)
     setAuthError('')
     try {
       const response = await fetch('/api/portail/auth/verify-code', {
@@ -199,6 +208,8 @@ export default function PortalBooking({
       }
     } catch (verificationError: unknown) {
       setAuthError(verificationError instanceof Error ? verificationError.message : 'Impossible de vérifier le code.')
+    } finally {
+      setAuthSubmitting(false)
     }
   }
 
@@ -247,7 +258,7 @@ export default function PortalBooking({
         </div>
         <p className="text-sm font-semibold uppercase tracking-widest text-indigo-600">Portail client</p>
         <h1 className="mt-2 text-3xl font-bold text-gray-900">Réserver une prestation</h1>
-        <Link href={`/portail/${encodeURIComponent(organizationSlug)}/mes-rdv`} className="ml-4 mt-2 inline-block text-sm text-indigo-700 underline">
+        <Link href={`/portail/${encodeURIComponent(organizationSlug)}/mes-rdv`} className={`${portalNavigationButtonClassName} ml-4 mt-2`}>
           Mes rendez-vous
         </Link>
       </header>
@@ -349,6 +360,7 @@ export default function PortalBooking({
                         type="email"
                         autoComplete="email"
                         required
+                        disabled={authSubmitting}
                         value={email}
                         onChange={(event) => {
                           setEmail(event.target.value)
@@ -377,6 +389,7 @@ export default function PortalBooking({
                           pattern="[0-9]{6}"
                           maxLength={6}
                           required
+                          disabled={authSubmitting}
                           value={code}
                           onChange={(event) => {
                             setCode(event.target.value)
@@ -394,19 +407,27 @@ export default function PortalBooking({
                       )}
                       <button
                         type="button"
+                        disabled={authSubmitting}
                         onClick={() => {
                           setCodeRequested(false)
                           setCode('')
                           setAuthError('')
                         }}
-                        className="text-sm text-indigo-700 underline"
+                        className="text-sm text-indigo-700 underline disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         Modifier l’email ou demander un nouveau code
                       </button>
                     </>
                   )}
-                  <button type="submit" className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white">
-                    {codeRequested ? 'Vérifier le code' : 'Recevoir un code'}
+                  <button
+                    type="submit"
+                    disabled={authSubmitting}
+                    aria-busy={authSubmitting}
+                    className="rounded-lg bg-indigo-600 px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {authSubmitting
+                      ? codeRequested ? 'Vérification en cours…' : 'Envoi du code…'
+                      : codeRequested ? 'Vérifier le code' : 'Recevoir un code'}
                   </button>
                 </form>
               </>
@@ -453,6 +474,7 @@ export default function PortalBooking({
             type="button"
             onClick={bookAppointment}
             disabled={!authenticated || !customerId || !service || !canLoadSlots || !selectedSlot || submitting}
+            aria-busy={submitting}
             className="w-full rounded-xl bg-gray-900 px-6 py-4 font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             {submitting ? 'Réservation en cours…' : 'Confirmer le rendez-vous'}
@@ -460,7 +482,7 @@ export default function PortalBooking({
         </>
       )}
       <footer className="pt-3 text-right text-xs text-gray-400">
-        <Link href="/auth/signin" className="hover:text-gray-600">Accès équipe</Link>
+        <Link href="/auth/signin" className={portalNavigationButtonClassName}>Accès équipe</Link>
       </footer>
     </main>
   )
