@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { CheckoutAppointment } from "@/types/models";
 
 const toastMock = vi.hoisted(() => ({
@@ -71,6 +71,30 @@ describe("CheckoutModal error feedback", () => {
         expect.stringContaining("Vérifiez votre connexion"),
       );
     });
+  });
+
+  it("shows a busy state while confirming a payment", async () => {
+    let resolveCheckout: (value: Response) => void = () => {
+      throw new Error("La requête d'encaissement ne démarre pas")
+    }
+    fetchMock
+      .mockResolvedValueOnce(jsonResponse(200, []))
+      .mockImplementationOnce(() => new Promise((resolve) => {
+        resolveCheckout = resolve
+      }))
+    const onClose = vi.fn()
+
+    render(<CheckoutModal appointment={appointment} onClose={onClose} onRefresh={vi.fn()} />);
+    fireEvent.click(await screen.findByRole("button", { name: "Confirmer l'encaissement" }));
+
+    const pendingButton = screen.getByRole("button", { name: "Encaissement en cours…" })
+    expect(pendingButton).toBeDisabled()
+    expect(pendingButton).toHaveAttribute("aria-busy", "true")
+
+    await act(async () => {
+      resolveCheckout(jsonResponse(200, { ok: true }))
+    })
+    expect(onClose).toHaveBeenCalledOnce()
   });
 
   it("warns when deletion succeeds but the email status cannot be confirmed", async () => {

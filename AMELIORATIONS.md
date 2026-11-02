@@ -75,6 +75,19 @@ en cours de traitement.
 
 ### Portail client — réservation en ligne
 
+#### Rendre visibles les liens de navigation et l'attente des actions
+- **Type :** Amélioration
+- **Statut :** Implémentée localement le 2 novembre 2026 ; contrôle visuel bêta à refaire après publication.
+- **Constat :** « Mes rendez-vous » et « Accès équipe » ressemblaient à de simples liens hypertexte. Certaines actions longues, dont la connexion et les étapes OTP, ne donnaient pas de retour visible pendant l'attente.
+- **Résultat souhaité :** Les liens de navigation importants sont repérables comme de petits boutons sans perdre leur comportement de lien ; les actions asynchrones longues signalent leur progression et empêchent les répétitions.
+- **Impact :** Une personne peut ne pas reconnaître une navigation importante ou croire qu'une action n'a pas été prise en compte.
+- **Critères d'acceptation :**
+  - « Mes rendez-vous » et « Accès équipe » ont une apparence compacte de bouton et un état de focus clavier ainsi qu'un retour visuel à l'appui.
+  - La connexion, la demande et la vérification OTP, le refus d'une demande, la clôture d'une campagne, la suppression d'une prestation, d'un rendez-vous ou d'un créneau d'indisponibilité, la réactivation d'un membre de l'équipe et les actions d'enregistrement/encaissement affichent une progression explicite pendant leur attente.
+  - Les actions en cours ne peuvent pas être répétées et redeviennent utilisables après une erreur.
+  - Le retour au clic natif reste présent sur les boutons activés dans l'application.
+- **Vérification :** Tests UI ciblés et type-check réussis le 2 novembre 2026 ; vérifier visuellement les états sur les parcours bêta après publication.
+
 #### Guider les nouveaux clients vers un appel au salon
 
 - **Type :** Amélioration

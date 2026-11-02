@@ -149,6 +149,7 @@ export default function AppointmentChangeRequests() {
                 type="button"
                 data-testid="approve-change-request"
                 disabled={pendingId === request.id}
+                aria-busy={pendingId === request.id}
                 onClick={() => void reviewRequest(request, 'approve')}
                 className="rounded-lg bg-green-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
               >
@@ -158,10 +159,11 @@ export default function AppointmentChangeRequests() {
                 type="button"
                 data-testid="reject-change-request"
                 disabled={pendingId === request.id}
+                aria-busy={pendingId === request.id}
                 onClick={() => void reviewRequest(request, 'reject')}
                 className="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-700 disabled:opacity-50"
               >
-                Refuser
+                {pendingId === request.id ? 'Refus en cours…' : 'Refuser'}
               </button>
             </div>
           </article>

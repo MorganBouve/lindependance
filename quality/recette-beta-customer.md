@@ -66,17 +66,22 @@ date : `________` · navigateur/appareil : `________` · organisation : `_______
 `DOMAIN-ORG-A`, déjà associé au salon que vous souhaitez contacter. Vérifiez
 que les deux pages affichent le nom et le logo du salon. Regardez également la
 présentation choisie par le salon : police, couleur et taille du nom, ainsi que
-la forme du logo. Actualisez ensuite les pages et vérifiez que la réservation
-reste accessible et que l'identité du salon est toujours affichée.
+la forme du logo. Repérez les petits boutons « Mes rendez-vous » et « Accès
+équipe » : vérifiez leur apparence, puis ouvrez chaque destination. Actualisez
+ensuite les pages et vérifiez que la réservation reste accessible et que
+l'identité du salon est toujours affichée.
 
 **Attendu :** le lien de réservation et le domaine dédié ouvrent le portail du
 même salon. Son nom et son logo suivent les réglages choisis, y compris la
 taille commune du logo et son adaptation à l'écran. Vous ne voyez aucune
-information appartenant à un autre salon.
+information appartenant à un autre salon. Les deux actions de navigation sont
+visibles comme des boutons compacts, restent utilisables au clavier et ouvrent
+respectivement vos rendez-vous et la connexion de l'équipe.
 
 **Automatisé :** `test/api/customer-portal-public.spec.ts`,
 `test/homepage.spec.ts`,
-`test/domain/customer-portal/portalDomains.spec.ts`.
+`test/domain/customer-portal/portalDomains.spec.ts`,
+`test/ui/portalBooking.spec.tsx`.
 **Résultat / preuve :** PARTIEL — le portail Osez l'Etre affiche le nom du salon
 et son logo après ouverture directe du lien. La racine `testing.osezletre.fr`
 doit être associée au salon Osez l'Etre par un `TECH_ADMIN` depuis
@@ -140,13 +145,15 @@ de fuseau et DST ; le parcours réel sur appareil reste à valider.
 
 ### Identification et identité client
 
-#### [x] CUS-05 — Recevoir un code de connexion par e-mail
+#### [ ] CUS-05 — Recevoir un code de connexion par e-mail
 **Priorité : P0 · Exigence :** [Req: formal — `customer-portal.md`, §2]
 
 **Étapes :** ouvrez la réservation sans session client. Avant de saisir une
 adresse, vérifiez la consigne pour un premier rendez-vous et les coordonnées
 publiques du salon. Demandez ensuite un code pour `ORG-A`, puis recommencez
-pour `ORG-B` avec une adresse de test qui peut recevoir les messages.
+pour `ORG-B` avec une adresse de test qui peut recevoir les messages. Si
+l'envoi prend un instant, observez le libellé du bouton et vérifiez qu'il ne
+peut pas être actionné une seconde fois.
 
 **Attendu :** le message affiché reste simple et ne révèle pas si une adresse
 est déjà connue du salon. Le message de `ORG-A` reprend le texte choisi par
@@ -154,11 +161,14 @@ le salon et contient son nom ainsi que le code reçu. Le message de `ORG-B`
 utilise le texte par défaut ; le code fonctionne dans les deux cas.
 La consigne de premier rendez-vous est visible pour toute personne non
 authentifiée, indique d'appeler le salon si un téléphone est configuré et ne
-change pas selon l'adresse saisie.
+change pas selon l'adresse saisie. Pendant l'envoi, le bouton indique que le
+code est en cours d'envoi et empêche les demandes répétées ; il redevient
+utilisable après la réponse.
 
 **Automatisé :** `test/api/customer-portal-request-code.spec.ts`,
 `test/services/customerPortalEmail.spec.ts`,
-`test/domain/customer-portal/emailTemplates.spec.ts`.
+`test/domain/customer-portal/emailTemplates.spec.ts`,
+`test/ui/portalBooking.spec.tsx`.
 **Résultat / preuve :** PASS — 30/10/2026 en préproduction, la consigne de
 premier rendez-vous et les coordonnées publiques sont visibles avant la saisie
 de l'adresse sur les deux portails. Après une demande de code, le message
@@ -170,17 +180,19 @@ message par défaut et le code a également été accepté. Le réglage initial 
 Salon recette réel a été restauré et vérifié après le test. Aucun code ni
 adresse n'est consigné.
 
-#### [x] CUS-06 — Utiliser le code de connexion
+#### [ ] CUS-06 — Utiliser le code de connexion
 **Priorité : P0 · Exigence :** [Req: formal — `customer-portal.md`, §2 et sécurité]
 
 **Étapes :** connectez-vous avec le code reçu par e-mail en appuyant sur
-Entrée dans le champ du code. Essayez aussi un code incorrect ou réutilisez
-l'ancien après avoir demandé un nouveau code.
+Entrée dans le champ du code. Si la vérification prend un instant, observez le
+bouton. Essayez aussi un code incorrect ou réutilisez l'ancien après avoir
+demandé un nouveau code.
 
 **Attendu :** le code reçu vous permet d'ouvrir votre espace client. Un code
 incorrect, expiré ou déjà utilisé ne permet pas de se connecter ; une erreur
 claire apparaît juste sous le champ et explique comment demander un nouveau
-code.
+code. Pendant la vérification, le bouton indique que le contrôle est en cours
+et empêche les envois répétés ; il redevient utilisable après la réponse.
 
 **Automatisé :** `test/api/customer-portal-verify-code.spec.ts` couvre les
 codes invalides/consommés/expirés ; `test/ui/portalBooking.spec.tsx` vérifie

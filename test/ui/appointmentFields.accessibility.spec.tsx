@@ -1,8 +1,10 @@
-import { render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import { describe, it, vi } from 'vitest'
+import { afterEach, describe, it, vi } from 'vitest'
 import type { ReactNode } from 'react'
 import AppointmentModal from '@/components/calendar/AppointmentModal'
+
+const appointmentFormState = vi.hoisted(() => ({ isSaving: false, isDeleting: false }))
 
 vi.mock('@/actions/createCustomerAndReturn', () => ({
   createCustomerAndReturn: vi.fn(),
@@ -24,7 +26,8 @@ vi.mock('@/hooks/useAppointmentForm', () => ({
     setUsePackage: vi.fn(),
     selectedCustomerPackageId: null,
     setSelectedCustomerPackageId: vi.fn(),
-    isSaving: false,
+    isSaving: appointmentFormState.isSaving,
+    isDeleting: appointmentFormState.isDeleting,
     isNoteSaving: false,
     noteSavedAt: null,
     noteDirty: false,
@@ -60,6 +63,12 @@ vi.mock('@/components/ui/ConfirmDialog', () => ({
 }))
 
 describe('AppointmentModal accessible field labels', () => {
+  afterEach(() => {
+    cleanup()
+    appointmentFormState.isSaving = false
+    appointmentFormState.isDeleting = false
+  })
+
   it('associates the visible labels with all appointment controls', () => {
     render(
       <AppointmentModal
@@ -75,5 +84,38 @@ describe('AppointmentModal accessible field labels', () => {
     expect(screen.getByLabelText('Durée (min)')).toHaveAttribute('type', 'number')
     expect(screen.getByLabelText('Service')).toBeInTheDocument()
     expect(screen.getByLabelText('Note')).toBeInTheDocument()
+  })
+
+  it('does not label appointment saving as a deletion', () => {
+    appointmentFormState.isSaving = true
+    render(
+      <AppointmentModal
+        isOpen
+        initialData={{ id: 'appointment-1' }}
+        onCloseAction={vi.fn()}
+        onSuccess={vi.fn().mockResolvedValue(undefined)}
+      />
+    )
+
+    const deleteButton = screen.getByRole('button', { name: 'SUPPRIMER' })
+    expect(deleteButton).toBeDisabled()
+    expect(deleteButton).toHaveAttribute('aria-busy', 'false')
+  })
+
+  it('shows progress while deleting an appointment', () => {
+    appointmentFormState.isSaving = true
+    appointmentFormState.isDeleting = true
+    render(
+      <AppointmentModal
+        isOpen
+        initialData={{ id: 'appointment-1' }}
+        onCloseAction={vi.fn()}
+        onSuccess={vi.fn().mockResolvedValue(undefined)}
+      />
+    )
+
+    const deleteButton = screen.getByRole('button', { name: 'SUPPRESSION EN COURS…' })
+    expect(deleteButton).toBeDisabled()
+    expect(deleteButton).toHaveAttribute('aria-busy', 'true')
   })
 })

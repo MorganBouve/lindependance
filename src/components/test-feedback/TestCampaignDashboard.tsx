@@ -85,6 +85,7 @@ export default function TestCampaignDashboard() {
   const latestCampaignRequest = useRef(0)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [closingCampaignId, setClosingCampaignId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [projectIssueUrl, setProjectIssueUrl] = useState<string | null>(null)
@@ -274,7 +275,9 @@ export default function TestCampaignDashboard() {
   }
 
   async function closeCampaign(id: string) {
+    if (closingCampaignId) return
     if (!window.confirm('Clôturer cette campagne ? Les testeurs ne pourront plus envoyer de résultats.')) return
+    setClosingCampaignId(id)
     setError('')
     try {
       const response = await fetch(`/api/test-campaigns/${id}`, {
@@ -287,6 +290,8 @@ export default function TestCampaignDashboard() {
       await loadCampaigns()
     } catch (cause: unknown) {
       setError(cause instanceof Error ? cause.message : 'Impossible de clôturer la campagne')
+    } finally {
+      setClosingCampaignId(null)
     }
   }
 
@@ -391,8 +396,14 @@ export default function TestCampaignDashboard() {
                       Copier le lien testeur
                     </button>
                     {campaign.status === 'ACTIVE' && (
-                      <button type="button" onClick={() => void closeCampaign(campaign.id)} className="rounded-lg px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50">
-                        Clôturer
+                      <button
+                        type="button"
+                        onClick={() => void closeCampaign(campaign.id)}
+                        disabled={closingCampaignId !== null}
+                        aria-busy={closingCampaignId === campaign.id}
+                        className="rounded-lg px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+                      >
+                        {closingCampaignId === campaign.id ? 'Clôture en cours…' : 'Clôturer'}
                       </button>
                     )}
                   </div>

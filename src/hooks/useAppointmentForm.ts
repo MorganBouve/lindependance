@@ -38,6 +38,7 @@ export interface UseAppointmentFormReturn {
   selectedCustomerPackageId: string | null
   setSelectedCustomerPackageId: (v: string | null) => void
   isSaving: boolean
+  isDeleting: boolean
   isNoteSaving: boolean
   noteSavedAt: number | null
   noteDirty: boolean
@@ -74,6 +75,7 @@ export function useAppointmentForm({
   isOpen, initialData, selectedRange, customers, services, onCloseAction, onSuccess,
 }: UseAppointmentFormProps): UseAppointmentFormReturn {
   const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [isNoteSaving, setIsNoteSaving] = useState(false)
   const [noteSavedAt, setNoteSavedAt] = useState<number | null>(null)
   const [noteDirty, setNoteDirty] = useState(false)
@@ -263,6 +265,7 @@ export function useAppointmentForm({
     setConfirmDeleteOpen(false)
     if (!initialData?.id) return
     setIsSaving(true)
+    setIsDeleting(true)
     try {
       const res = await fetch(`/api/appointments?id=${initialData.id}`, { method: 'DELETE', credentials: 'include' })
       if (res.ok) {
@@ -281,19 +284,28 @@ export function useAppointmentForm({
         catch (err: unknown) {
           import('@/lib/clientLogger').then(({ clientError }) => clientError('onSuccess failed (delete)', err))
           if (mountedRef.current) toast.error("Le rendez-vous a été supprimé, mais l'agenda n'a pas pu être actualisé. Actualisez la page.")
-        } finally { if (mountedRef.current) setIsSaving(false) }
+        } finally {
+          if (mountedRef.current) {
+            setIsSaving(false)
+            setIsDeleting(false)
+          }
+        }
       } else {
         let payload: unknown = null
         try { payload = await res.json() } catch { /* ignore */ }
         import('@/lib/clientLogger').then(({ clientError }) => clientError('Delete failed', { status: res.status, payload }))
         toast.error(getUserFacingMutationError('appointment-delete', res.status))
-        if (mountedRef.current) setIsSaving(false)
+        if (mountedRef.current) {
+          setIsSaving(false)
+          setIsDeleting(false)
+        }
       }
     } catch (err: unknown) {
       import('@/lib/clientLogger').then(({ clientError }) => clientError('Delete error', err))
       if (mountedRef.current) {
         toast.error(getUserFacingNetworkError('appointment-delete'))
         setIsSaving(false)
+        setIsDeleting(false)
       }
     }
   }
@@ -303,12 +315,11 @@ export function useAppointmentForm({
     noteSavedAt, noteDirty,
     startTime, setStartTime, duration, setDuration, date, setDate,
     customerPackages, usePackage, setUsePackage, selectedCustomerPackageId, setSelectedCustomerPackageId,
-    isSaving, isNoteSaving, collision, setCollision, confirmDeleteOpen, setConfirmDeleteOpen,
+    isSaving, isDeleting, isNoteSaving, collision, setCollision, confirmDeleteOpen, setConfirmDeleteOpen,
     HORAIRE_OUVERTURE, HORAIRE_FERMETURE, isTimeOutOfBounds, isFormInvalid,
     getEndTimeLabel, handleServiceChange, handleSave, handleDelete, handleConfirmDelete, handleSaveNote,
   }
 }
-
 
 
 

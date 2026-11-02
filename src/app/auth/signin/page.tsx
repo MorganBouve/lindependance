@@ -10,21 +10,29 @@ export default function SignInPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
-    // Remove legacy/old cookies (clear all cookies) to avoid v4/v5 cookie conflicts
-    // This is a best-effort client-side cleanup performed just before signIn.
+    if (isSubmitting) return
+    setIsSubmitting(true)
+    setError(null)
     try {
-      document.cookie.split(";").forEach(c => document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"))
-    } catch (e) {
-      // ignore if running in constrained environments where document isn't available
-    }
+      // Remove legacy/old cookies (clear all cookies) to avoid v4/v5 cookie conflicts.
+      // This is a best-effort client-side cleanup performed just before signIn.
+      try {
+        document.cookie.split(";").forEach(c => document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"))
+      } catch {
+        // Ignore constrained environments where document isn't available.
+      }
 
-    // force redirect:false to handle redirect manually and avoid multiple automatic redirects
-    const res = await signIn('credentials', { redirect: false, email, password })
-    if (res?.error) setError(res.error)
-    else if (res?.ok) {
+      // Force redirect:false to avoid competing automatic redirects.
+      const res = await signIn('credentials', { redirect: false, email, password })
+      if (!res?.ok) {
+        setError(res?.error ?? 'Impossible de se connecter. Réessayez.')
+        return
+      }
+
       // If a callbackUrl is present in the query, ensure it's normalized to root
       try {
         const params = new URLSearchParams(window.location.search)
@@ -39,6 +47,10 @@ export default function SignInPage() {
       } catch {
         window.location.href = '/'
       }
+    } catch {
+      setError('Impossible de se connecter. Réessayez.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -59,7 +71,14 @@ export default function SignInPage() {
         <div className="mb-4 text-right">
           <Link href="/auth/forgot-password" className="text-sm text-studio-action hover:text-studio-action-hover hover:underline">Mot de passe oublié ?</Link>
         </div>
-        <button type="submit" className="w-full py-2 rounded bg-studio-action text-white font-bold">Se connecter</button>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          aria-busy={isSubmitting}
+          className="w-full py-2 rounded bg-studio-action text-white font-bold disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {isSubmitting ? 'Connexion en cours…' : 'Se connecter'}
+        </button>
       </form>
     </div>
   )

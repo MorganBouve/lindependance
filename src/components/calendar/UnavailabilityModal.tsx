@@ -273,14 +273,14 @@ export default function UnavailabilityModal({
         <div className="flex justify-between items-center mt-1 flex-wrap gap-2">
           {isEditing && (
             <div className="flex gap-2">
-              <button type="button" onClick={() => handleDelete(false)} disabled={isSaving}
+              <button type="button" onClick={() => handleDelete(false)} disabled={isSaving} aria-busy={isSaving}
                 className="text-red-700 text-[11px] font-bold flex items-center gap-1.5 hover:opacity-80 transition-opacity">
-                <Trash2 size={13} /> Supprimer ce créneau
+                <Trash2 size={13} /> {isSaving ? 'Suppression en cours…' : 'Supprimer ce créneau'}
               </button>
               {isSeries && (
-                <button type="button" onClick={() => handleDelete(true)} disabled={isSaving}
+                <button type="button" onClick={() => handleDelete(true)} disabled={isSaving} aria-busy={isSaving}
                   className="text-red-700 text-[11px] font-bold flex items-center gap-1.5 hover:opacity-80 transition-opacity border-l border-red-200 pl-2">
-                  <Trash2 size={13} /> Supprimer les créneaux répétés
+                  <Trash2 size={13} /> {isSaving ? 'Suppression en cours…' : 'Supprimer les créneaux répétés'}
                 </button>
               )}
             </div>
@@ -288,9 +288,9 @@ export default function UnavailabilityModal({
           <div className="flex gap-2 ml-auto">
             <button type="button" onClick={onClose} className="px-5 py-2 text-slate-700 font-bold text-sm">ANNULER</button>
             {!isEditing && (
-              <button type="submit" disabled={isFormInvalid || isSaving}
+              <button type="submit" disabled={isFormInvalid || isSaving} aria-busy={isSaving}
                 className="px-6 py-2.5 bg-slate-800 text-white rounded-full font-bold text-sm flex items-center gap-2 shadow disabled:opacity-50 disabled:cursor-not-allowed">
-                <BanIcon size={14} /> {isSaving ? '...' : 'BLOQUER'}
+                <BanIcon size={14} /> {isSaving ? 'BLOCAGE EN COURS…' : 'BLOQUER'}
               </button>
             )}
           </div>

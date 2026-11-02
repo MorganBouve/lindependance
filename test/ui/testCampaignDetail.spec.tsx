@@ -1,6 +1,34 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import TestCampaignDetail from '@/components/test-feedback/TestCampaignDetail'
+
+function campaignDetails(status: 'ACTIVE' | 'CLOSED') {
+  return {
+    campaign: {
+      id: 'campaign-1',
+      name: 'Recette réservation',
+      scenarioGroups: ['ONLINE_BOOKING'],
+      profiles: ['USER'],
+      status,
+      publicToken: 'public-token',
+      createdAt: '2026-10-04T09:00:00.000Z',
+      closedAt: status === 'CLOSED' ? '2026-10-04T10:00:00.000Z' : null,
+      organizationName: 'Osez le T’re',
+    },
+    progress: {
+      total: 0,
+      tested: 0,
+      passed: 0,
+      failed: 0,
+      blocked: 0,
+      remaining: 0,
+      currentResults: [],
+    },
+    scenarios: [],
+    history: [],
+    campaignReviews: [],
+  }
+}
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -125,5 +153,33 @@ describe('TestCampaignDetail', () => {
     expect(clickedLinks[0].download).toMatch(/^recette-reservation-\d{4}-\d{2}-\d{2}\.json$/)
     expect(clickedLinks[0].href).toBe('blob:campaign-export')
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:campaign-export')
+  })
+
+  it('shows progress while closing a campaign', async () => {
+    let resolveClose: (response: Response) => void = () => {
+      throw new Error('La clôture de la campagne ne démarre pas')
+    }
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify(campaignDetails('ACTIVE')), { status: 200 }))
+      .mockImplementationOnce(() => new Promise((resolve) => {
+        resolveClose = resolve
+      }))
+      .mockResolvedValueOnce(new Response(JSON.stringify(campaignDetails('CLOSED')), { status: 200 }))
+    vi.stubGlobal('fetch', fetchMock)
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+
+    render(<TestCampaignDetail campaignId="campaign-1" />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Clôturer la campagne' }))
+
+    const pendingButton = screen.getByRole('button', { name: 'Clôture en cours…' })
+    expect(pendingButton).toBeDisabled()
+    expect(pendingButton).toHaveAttribute('aria-busy', 'true')
+
+    await act(async () => {
+      resolveClose(new Response(JSON.stringify({ status: 'CLOSED' }), { status: 200 }))
+    })
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Clôturer la campagne' })).not.toBeInTheDocument()
+    })
   })
 })

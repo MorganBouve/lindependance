@@ -298,7 +298,14 @@ export default function CheckoutModal({ appointment, onClose, onRefresh }: Check
                             <p className="text-sm text-gray-600 mt-2">Êtes-vous sûr·e de vouloir supprimer ce rendez-vous ? Cette action est irréversible.</p>
                             <div className="mt-4 flex justify-end gap-2">
                                 <button onClick={() => setShowDeleteConfirm(false)} className="px-4 py-2 rounded-xl border">Annuler</button>
-                                <button onClick={handleDeleteConfirm} disabled={deleteLoading} className="px-4 py-2 rounded-xl bg-red-600 text-white disabled:opacity-50">{deleteLoading ? '...' : 'Supprimer'}</button>
+                                <button
+                                    onClick={handleDeleteConfirm}
+                                    disabled={deleteLoading}
+                                    aria-busy={deleteLoading}
+                                    className="px-4 py-2 rounded-xl bg-red-600 text-white disabled:opacity-50"
+                                >
+                                    {deleteLoading ? 'Suppression en cours…' : 'Supprimer'}
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -472,9 +479,12 @@ export default function CheckoutModal({ appointment, onClose, onRefresh }: Check
                                 <button
                                     onClick={handleConfirm}
                                     disabled={loading || isPaid && soldProducts.length === 0 && extras.length === 0}
+                                    aria-busy={loading}
                                     className={`flex-1 py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 transition-all ${isPaid ? 'bg-gray-900' : 'bg-indigo-600'} text-white disabled:opacity-50`}
                                 >
-                                    {loading ? "..." : (isPaid ? <><Save size={20} /> Mettre à jour</> : "Confirmer l'encaissement")}
+                                    {loading
+                                        ? isPaid ? 'Mise à jour en cours…' : 'Encaissement en cours…'
+                                        : (isPaid ? <><Save size={20} /> Mettre à jour</> : "Confirmer l'encaissement")}
                                 </button>
                             )}
                         </div>
