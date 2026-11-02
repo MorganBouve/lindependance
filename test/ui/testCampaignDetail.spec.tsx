@@ -99,6 +99,8 @@ describe('TestCampaignDetail', () => {
     render(<TestCampaignDetail campaignId="campaign-1" />)
 
     expect(await screen.findByRole('heading', { name: 'Avis général des testeurs' })).toBeInTheDocument()
+    expect(screen.getByDisplayValue(`${window.location.origin}/retour-test/public-token`))
+      .toBeInTheDocument()
     expect(screen.getByText('Plutôt compréhensibles')).toBeInTheDocument()
     expect(screen.getByText('Adaptée')).toBeInTheDocument()
     expect(screen.getByText('Oui, très utiles')).toBeInTheDocument()

@@ -21,6 +21,25 @@ vi.mock('@/components/ui/ConfirmDialog', () => ({
   ) : null,
 }))
 
+function UnavailabilityModalHarness({
+  isOpen,
+  initialStart,
+}: {
+  isOpen: boolean
+  initialStart: Date
+}) {
+  if (!isOpen) return null
+  return (
+    <UnavailabilityModal
+      isOpen
+      initialStart={initialStart}
+      initialEnd={new Date(initialStart.getTime() + 60 * 60 * 1000)}
+      onClose={vi.fn()}
+      onSuccess={vi.fn()}
+    />
+  )
+}
+
 afterEach(() => {
   cleanup()
   vi.restoreAllMocks()
@@ -28,6 +47,22 @@ afterEach(() => {
 })
 
 describe('UnavailabilityModal', () => {
+  it('resets the form when a new modal session opens', () => {
+    const { rerender } = render(
+      <UnavailabilityModalHarness isOpen initialStart={new Date('2026-11-02T09:00:00')} />,
+    )
+
+    fireEvent.change(screen.getAllByDisplayValue('2026-11-02')[0], {
+      target: { value: '2026-11-03' },
+    })
+    expect(screen.getByDisplayValue('2026-11-03')).toBeInTheDocument()
+
+    rerender(<UnavailabilityModalHarness isOpen={false} initialStart={new Date('2026-11-02T09:00:00')} />)
+    rerender(<UnavailabilityModalHarness isOpen initialStart={new Date('2026-11-04T11:00:00')} />)
+
+    expect(screen.getAllByDisplayValue('2026-11-04')).toHaveLength(2)
+  })
+
   it('shows progress while deleting an unavailability', async () => {
     let resolveDeletion: (value: Response) => void = () => {
       throw new Error('La suppression du créneau ne démarre pas')

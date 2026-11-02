@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { z } from 'zod'
 import { TestCampaignDetailResponseSchema } from '@/schemas/testFeedbackResponses'
 import {
@@ -16,6 +16,10 @@ import {
 
 type CampaignDetail = z.infer<typeof TestCampaignDetailResponseSchema>
 type ResultFilter = 'ALL' | 'PASS' | 'FAIL' | 'BLOCKED' | 'UNTESTED'
+
+const subscribeToLocationOrigin = () => () => {}
+const getLocationOrigin = () => window.location.origin
+const getServerLocationOrigin = () => ''
 
 function parseProfileFilter(value: string): 'ALL' | 'ADMIN' | 'USER' {
   if (value === 'ADMIN' || value === 'USER') return value
@@ -69,38 +73,66 @@ function scenarioGroupLabel(id: TestScenarioGroupId): string {
 export default function TestCampaignDetail({ campaignId }: { campaignId: string }) {
   const [data, setData] = useState<CampaignDetail | null>(null)
   const [loading, setLoading] = useState(true)
+  const [settledCampaignId, setSettledCampaignId] = useState('')
   const [closing, setClosing] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
-  const [origin, setOrigin] = useState('')
+  const origin = useSyncExternalStore(
+    subscribeToLocationOrigin,
+    getLocationOrigin,
+    getServerLocationOrigin,
+  )
   const [profileFilter, setProfileFilter] = useState<'ALL' | 'ADMIN' | 'USER'>('ALL')
   const [resultFilter, setResultFilter] = useState<ResultFilter>('ALL')
   const [search, setSearch] = useState('')
+
+  const fetchCampaign = useCallback(async () => {
+    const response = await fetch(`/api/test-campaigns/${campaignId}`, { cache: 'no-store' })
+    if (!response.ok) throw new Error(await responseError(response))
+    const payload: unknown = await response.json()
+    const parsed = TestCampaignDetailResponseSchema.safeParse(payload)
+    if (!parsed.success) throw new Error('Réponse invalide du suivi de campagne')
+    return parsed.data
+  }, [campaignId])
+
+  useEffect(() => {
+    let active = true
+    void (async () => {
+      try {
+        const campaign = await fetchCampaign()
+        if (active) {
+          setData(campaign)
+          setError('')
+        }
+      } catch (cause: unknown) {
+        if (active) {
+          setError(cause instanceof Error ? cause.message : 'Impossible de charger le suivi')
+        }
+      } finally {
+        if (active) {
+          setLoading(false)
+          setSettledCampaignId(campaignId)
+        }
+      }
+    })()
+    return () => {
+      active = false
+    }
+  }, [campaignId, fetchCampaign])
 
   const loadCampaign = useCallback(async () => {
     setLoading(true)
     setError('')
     try {
-      const response = await fetch(`/api/test-campaigns/${campaignId}`, { cache: 'no-store' })
-      if (!response.ok) throw new Error(await responseError(response))
-      const payload: unknown = await response.json()
-      const parsed = TestCampaignDetailResponseSchema.safeParse(payload)
-      if (!parsed.success) throw new Error('Réponse invalide du suivi de campagne')
-      setData(parsed.data)
+      const campaign = await fetchCampaign()
+      setData(campaign)
     } catch (cause: unknown) {
       setError(cause instanceof Error ? cause.message : 'Impossible de charger le suivi')
     } finally {
       setLoading(false)
+      setSettledCampaignId(campaignId)
     }
-  }, [campaignId])
-
-  useEffect(() => {
-    void loadCampaign()
-  }, [loadCampaign])
-
-  useEffect(() => {
-    setOrigin(window.location.origin)
-  }, [])
+  }, [campaignId, fetchCampaign])
 
   const visibleScenarios = useMemo(() => (data?.scenarios ?? []).filter((scenario) => {
     const status = scenario.result?.status ?? null
@@ -175,7 +207,7 @@ export default function TestCampaignDetail({ campaignId }: { campaignId: string 
     }
   }
 
-  if (loading) return <p role="status" className="p-8 text-sm text-(--studio-muted)">Chargement du suivi…</p>
+  if (loading || settledCampaignId !== campaignId) return <p role="status" className="p-8 text-sm text-(--studio-muted)">Chargement du suivi…</p>
   if (error && !data) return <p role="alert" className="m-6 rounded-xl bg-red-50 p-4 text-sm text-red-800">{error}</p>
   if (!data) return null
 

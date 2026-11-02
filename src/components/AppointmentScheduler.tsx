@@ -210,29 +210,31 @@ export default function AppointmentScheduler() {
                 staffs={staffs}
             />
 
-            <UnavailabilityModal
-                isOpen={isUnavailModalOpen}
-                onClose={() => setIsUnavailModalOpen(false)}
-                onSuccess={() => {
-                    // Refresh unavailabilities for the currently visible calendar range if possible.
-                    // Previously we used a fixed range around "now" which didn't include future months
-                    // (e.g. creating a July unavailability while "now" is May). Use lastRangeRef if set.
-                    const last = lastRangeRef.current
-                    if (last && last.start && last.end) {
-                        fetchUnavailabilities(last.start, last.end)
-                    } else {
-                        const now = new Date()
-                        const start = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
-                        const end = new Date(now.getFullYear(), now.getMonth() + 2, 0).toISOString()
-                        fetchUnavailabilities(start, end)
-                    }
-                }}
-                initialStart={unavailInitialStart}
-                initialEnd={unavailInitialEnd}
-                editingId={unavailEditingId}
-                editingTitle={unavailEditingTitle}
-                editingRecurrenceGroupId={unavailEditingGroupId}
-            />
+            {isUnavailModalOpen && (
+                <UnavailabilityModal
+                    isOpen
+                    onClose={() => setIsUnavailModalOpen(false)}
+                    onSuccess={() => {
+                        // Refresh unavailabilities for the currently visible calendar range if possible.
+                        // Previously we used a fixed range around "now" which didn't include future months
+                        // (e.g. creating a July unavailability while "now" is May). Use lastRangeRef if set.
+                        const last = lastRangeRef.current
+                        if (last && last.start && last.end) {
+                            fetchUnavailabilities(last.start, last.end)
+                        } else {
+                            const now = new Date()
+                            const start = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
+                            const end = new Date(now.getFullYear(), now.getMonth() + 2, 0).toISOString()
+                            fetchUnavailabilities(start, end)
+                        }
+                    }}
+                    initialStart={unavailInitialStart}
+                    initialEnd={unavailInitialEnd}
+                    editingId={unavailEditingId}
+                    editingTitle={unavailEditingTitle}
+                    editingRecurrenceGroupId={unavailEditingGroupId}
+                />
+            )}
         </div>
     );
 }

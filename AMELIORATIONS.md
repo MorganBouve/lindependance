@@ -22,6 +22,22 @@ en cours de traitement.
 
 ## À traiter
 
+### Qualité — validation ESLint complète
+
+#### Rétablir le lint complet du dépôt
+
+- **Type :** Bug
+- **Statut :** À traiter — `pnpm lint` échoue le 2 novembre 2026 sur des fichiers inchangés par rapport à `preprod`.
+- **Priorité proposée :** P1
+- **Comportement observé :** La commande complète termine avec 51 erreurs ESLint et 24 avertissements, notamment dans des scripts, des composants et des tests. Le lint ciblé des fichiers modifiés dans la correction actuelle passe.
+- **Comportement attendu :** `pnpm lint` termine sans erreur sur l'ensemble du dépôt afin que la vérification lint puisse servir de contrôle de publication.
+- **Étapes de reproduction :** Exécuter `pnpm lint` à la racine du dépôt.
+- **Impact :** Le contrôle lint complet échoue et masque la validation du code de la branche derrière des erreurs préexistantes hors de son diff.
+- **Critères d’acceptation :**
+  - Les 51 erreurs ESLint reproduites le 2 novembre 2026 sont corrigées ou font l'objet d'une décision explicite et documentée.
+  - `pnpm lint` termine avec un code de sortie nul sur le dépôt complet.
+  - Le lint ciblé des fichiers touchés reste sans erreur.
+
 ### Portail client — annulation des rendez-vous
 
 #### [#94](https://github.com/Fadgag/lindependance/issues/94) Bloquer l’annulation client des rendez-vous déjà payés

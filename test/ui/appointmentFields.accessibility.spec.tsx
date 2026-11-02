@@ -1,10 +1,18 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { act, cleanup, render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { afterEach, describe, it, vi } from 'vitest'
 import type { ReactNode } from 'react'
 import AppointmentModal from '@/components/calendar/AppointmentModal'
 
-const appointmentFormState = vi.hoisted(() => ({ isSaving: false, isDeleting: false }))
+const appointmentFormState = vi.hoisted((): {
+  isSaving: boolean
+  isDeleting: boolean
+  noteSavedAt: number | null
+} => ({
+  isSaving: false,
+  isDeleting: false,
+  noteSavedAt: null,
+}))
 
 vi.mock('@/actions/createCustomerAndReturn', () => ({
   createCustomerAndReturn: vi.fn(),
@@ -29,7 +37,7 @@ vi.mock('@/hooks/useAppointmentForm', () => ({
     isSaving: appointmentFormState.isSaving,
     isDeleting: appointmentFormState.isDeleting,
     isNoteSaving: false,
-    noteSavedAt: null,
+    noteSavedAt: appointmentFormState.noteSavedAt,
     noteDirty: false,
     collision: false,
     setCollision: vi.fn(),
@@ -67,6 +75,8 @@ describe('AppointmentModal accessible field labels', () => {
     cleanup()
     appointmentFormState.isSaving = false
     appointmentFormState.isDeleting = false
+    appointmentFormState.noteSavedAt = null
+    vi.useRealTimers()
   })
 
   it('associates the visible labels with all appointment controls', () => {
@@ -117,5 +127,21 @@ describe('AppointmentModal accessible field labels', () => {
     const deleteButton = screen.getByRole('button', { name: 'SUPPRESSION EN COURS…' })
     expect(deleteButton).toBeDisabled()
     expect(deleteButton).toHaveAttribute('aria-busy', 'true')
+  })
+
+  it('shows the saved note indicator for five seconds', () => {
+    vi.useFakeTimers()
+    appointmentFormState.noteSavedAt = 123
+    render(
+      <AppointmentModal
+        isOpen
+        onCloseAction={vi.fn()}
+        onSuccess={vi.fn().mockResolvedValue(undefined)}
+      />
+    )
+
+    expect(screen.getByText('✅ Enregistr')).toBeInTheDocument()
+    act(() => vi.advanceTimersByTime(5000))
+    expect(screen.queryByText('✅ Enregistr')).not.toBeInTheDocument()
   })
 })

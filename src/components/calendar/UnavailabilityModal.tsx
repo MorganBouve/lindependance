@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { toast } from 'sonner'
 import { format, isValid } from 'date-fns'
 import { fr as frLocale } from 'date-fns/locale'
@@ -30,28 +30,17 @@ export default function UnavailabilityModal({
   initialStart, initialEnd,
   editingId, editingTitle, editingRecurrenceGroupId,
 }: UnavailabilityModalProps) {
-  const [title, setTitle] = useState('')
-  const [dateFrom, setDateFrom] = useState('')
-  const [timeFrom, setTimeFrom] = useState('')
-  const [dateTo, setDateTo] = useState('')
-  const [timeTo, setTimeTo] = useState('')
+  const from = initialStart ?? new Date()
+  const to = initialEnd ?? new Date(from.getTime() + 60 * 60 * 1000)
+  const [title, setTitle] = useState(editingTitle ?? '')
+  const [dateFrom, setDateFrom] = useState(() => format(from, 'yyyy-MM-dd'))
+  const [timeFrom, setTimeFrom] = useState(() => format(from, 'HH:mm'))
+  const [dateTo, setDateTo] = useState(() => format(to, 'yyyy-MM-dd'))
+  const [timeTo, setTimeTo] = useState(() => format(to, 'HH:mm'))
   const [allDay, setAllDay] = useState(false)
   const [recurrence, setRecurrence] = useState<Recurrence>('NONE')
   const [isSaving, setIsSaving] = useState(false)
   const [confirmState, setConfirmState] = useState<{ open: boolean; deleteAll: boolean }>({ open: false, deleteAll: false })
-
-  useEffect(() => {
-    if (!isOpen) return
-    setTitle(editingTitle ?? '')
-    const from = initialStart ?? new Date()
-    const to = initialEnd ?? new Date(from.getTime() + 60 * 60 * 1000)
-    setDateFrom(format(from, 'yyyy-MM-dd'))
-    setTimeFrom(format(from, 'HH:mm'))
-    setDateTo(format(to, 'yyyy-MM-dd'))
-    setTimeTo(format(to, 'HH:mm'))
-    setAllDay(false)
-    setRecurrence('NONE')
-  }, [isOpen, initialStart, initialEnd, editingTitle])
 
   const humanDate = (dateStr: string) => {
     try {

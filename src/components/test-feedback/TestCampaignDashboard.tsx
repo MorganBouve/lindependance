@@ -82,7 +82,9 @@ export default function TestCampaignDashboard() {
     scenarioGroupCatalog.map(({ id }) => id),
   )
   const [loadedOrganizationKey, setLoadedOrganizationKey] = useState('')
+  const [settledOrganizationKey, setSettledOrganizationKey] = useState('')
   const latestCampaignRequest = useRef(0)
+  const organizationIdRef = useRef('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [closingCampaignId, setClosingCampaignId] = useState<string | null>(null)
@@ -90,54 +92,65 @@ export default function TestCampaignDashboard() {
   const [notice, setNotice] = useState('')
   const [projectIssueUrl, setProjectIssueUrl] = useState<string | null>(null)
 
-  const loadCampaigns = useCallback(async () => {
-    const requestId = ++latestCampaignRequest.current
-    setLoading(true)
-    setError('')
-    try {
-      const query = organizationQuery
-        ? `?${organizationQuery}`
-        : ''
-      const response = await fetch(`/api/test-campaigns${query}`, { cache: 'no-store' })
-      if (!response.ok) throw new Error(await responseError(response))
-      const payload: unknown = await response.json()
-      const parsed = TestCampaignListResponseSchema.safeParse(payload)
-      if (!parsed.success) throw new Error('Réponse invalide du tableau de bord')
-      if (requestId !== latestCampaignRequest.current) return
-      setData(parsed.data)
-      setLoadedOrganizationKey(selectedOrganizationKey)
-    } catch (cause: unknown) {
-      if (requestId === latestCampaignRequest.current) {
-        setError(cause instanceof Error ? cause.message : 'Impossible de charger les campagnes')
-      }
-    } finally {
-      if (requestId === latestCampaignRequest.current) setLoading(false)
-    }
-  }, [organizationQuery, selectedOrganizationKey])
-
-  useEffect(() => {
-    void loadCampaigns()
-  }, [loadCampaigns])
-
-  useEffect(() => {
-    if (!data) return
-    setOrganizationId(singleSelectedOrganizationId ?? '')
-  }, [data, singleSelectedOrganizationId])
-
-  useEffect(() => {
-    let active = true
+  const selectOrganization = useCallback((nextOrganizationId: string) => {
+    if (organizationIdRef.current === nextOrganizationId) return
+    organizationIdRef.current = nextOrganizationId
+    setOrganizationId(nextOrganizationId)
     setRecipients([])
     setRecipientsOrganizationId(null)
     setSelectedRecipientIds([])
     setRecipientsError('')
-    if (!organizationId) {
-      setLoadingRecipients(false)
-      return () => {
-        active = false
-      }
-    }
+    setLoadingRecipients(Boolean(nextOrganizationId))
+  }, [])
 
-    setLoadingRecipients(true)
+  const fetchCampaigns = useCallback(async () => {
+    const query = organizationQuery
+      ? `?${organizationQuery}`
+      : ''
+    const response = await fetch(`/api/test-campaigns${query}`, { cache: 'no-store' })
+    if (!response.ok) throw new Error(await responseError(response))
+    const payload: unknown = await response.json()
+    const parsed = TestCampaignListResponseSchema.safeParse(payload)
+    if (!parsed.success) throw new Error('Réponse invalide du tableau de bord')
+    return parsed.data
+  }, [organizationQuery])
+
+  const applyCampaigns = useCallback((campaigns: CampaignDashboard) => {
+    setData(campaigns)
+    setLoadedOrganizationKey(selectedOrganizationKey)
+    setError('')
+    selectOrganization(singleSelectedOrganizationId ?? '')
+  }, [selectOrganization, selectedOrganizationKey, singleSelectedOrganizationId])
+
+  useEffect(() => {
+    let active = true
+    const requestId = ++latestCampaignRequest.current
+    void (async () => {
+      try {
+        const campaigns = await fetchCampaigns()
+        if (!active || requestId !== latestCampaignRequest.current) return
+        applyCampaigns(campaigns)
+      } catch (cause: unknown) {
+        if (active && requestId === latestCampaignRequest.current) {
+          setError(cause instanceof Error ? cause.message : 'Impossible de charger les campagnes')
+        }
+      } finally {
+        if (active && requestId === latestCampaignRequest.current) {
+          setLoading(false)
+          setSettledOrganizationKey(selectedOrganizationKey)
+        }
+      }
+    })()
+    return () => {
+      active = false
+    }
+  }, [applyCampaigns, fetchCampaigns, selectedOrganizationKey])
+
+  useEffect(() => {
+    let active = true
+    if (!organizationId) return () => {
+      active = false
+    }
     void (async () => {
       try {
         const response = await fetch(
@@ -165,6 +178,26 @@ export default function TestCampaignDashboard() {
       active = false
     }
   }, [organizationId])
+
+  const loadCampaigns = useCallback(async () => {
+    const requestId = ++latestCampaignRequest.current
+    setLoading(true)
+    setError('')
+    try {
+      const campaigns = await fetchCampaigns()
+      if (requestId !== latestCampaignRequest.current) return
+      applyCampaigns(campaigns)
+    } catch (cause: unknown) {
+      if (requestId === latestCampaignRequest.current) {
+        setError(cause instanceof Error ? cause.message : 'Impossible de charger les campagnes')
+      }
+    } finally {
+      if (requestId === latestCampaignRequest.current) {
+        setLoading(false)
+        setSettledOrganizationKey(selectedOrganizationKey)
+      }
+    }
+  }, [applyCampaigns, fetchCampaigns, selectedOrganizationKey])
 
   async function createCampaign(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -305,7 +338,8 @@ export default function TestCampaignDashboard() {
     }
   }
 
-  const campaigns = loading || loadedOrganizationKey !== selectedOrganizationKey
+  const campaignsLoading = loading || settledOrganizationKey !== selectedOrganizationKey
+  const campaigns = campaignsLoading || loadedOrganizationKey !== selectedOrganizationKey
     ? []
     : data?.campaigns ?? []
   const totals = campaigns.reduce((summary, campaign) => ({
@@ -357,8 +391,8 @@ export default function TestCampaignDashboard() {
 
       <section aria-labelledby="campaign-list-title" className="space-y-4">
         <h2 id="campaign-list-title" className="font-serif text-2xl text-(--studio-text)">Campagnes</h2>
-        {loading && <p role="status" className="text-sm text-(--studio-muted)">Chargement des campagnes…</p>}
-        {!loading && campaigns.length === 0 && (
+        {campaignsLoading && <p role="status" className="text-sm text-(--studio-muted)">Chargement des campagnes…</p>}
+        {!campaignsLoading && campaigns.length === 0 && (
           <p className="rounded-2xl border border-dashed border-(--studio-border) bg-white p-8 text-center text-sm text-(--studio-muted)">
             Aucune campagne. Créez-en une pour commencer la recette.
           </p>
@@ -440,7 +474,7 @@ export default function TestCampaignDashboard() {
           </label>
           <label className="grid gap-2 text-sm font-medium text-(--studio-text)">
             Organisation
-            <select required value={organizationId} onChange={(event) => setOrganizationId(event.target.value)} className="rounded-lg border border-(--studio-border) bg-white px-3 py-2">
+            <select required value={organizationId} onChange={(event) => selectOrganization(event.target.value)} className="rounded-lg border border-(--studio-border) bg-white px-3 py-2">
               <option value="" disabled>Choisir une organisation</option>
               {(data?.organizations ?? []).map((organization) => (
                 <option key={organization.id} value={organization.id}>{organization.name}</option>
