@@ -74,7 +74,7 @@ describe("CheckoutModal error feedback", () => {
   });
 
   it("shows a busy state while confirming a payment", async () => {
-    let resolveCheckout: (value: Response) => void = (_value) => {
+    let resolveCheckout: (value: Response) => void = () => {
       throw new Error("La requête d'encaissement ne démarre pas")
     }
     fetchMock

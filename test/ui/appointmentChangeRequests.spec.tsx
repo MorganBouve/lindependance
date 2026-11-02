@@ -82,7 +82,7 @@ describe('AppointmentChangeRequests', () => {
   })
 
   it('shows that a rejection is being processed until the request finishes', async () => {
-    let resolveReview: (value: Response) => void = (_value) => {
+    let resolveReview: (value: Response) => void = () => {
       throw new Error('La décision de refus ne démarre pas')
     }
     const fetchMock = vi.mocked(fetch)

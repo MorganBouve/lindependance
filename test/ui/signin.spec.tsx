@@ -42,7 +42,7 @@ describe('SignInPage', () => {
   })
 
   it('shows a busy state while signing in and restores the button after an error', async () => {
-    let resolveSignIn: (response: Awaited<ReturnType<typeof signIn>>) => void = (_response) => {
+    let resolveSignIn: (response: Awaited<ReturnType<typeof signIn>>) => void = () => {
       throw new Error('La requête de connexion ne démarre pas')
     }
     vi.mocked(signIn).mockReturnValue(new Promise((resolve) => {

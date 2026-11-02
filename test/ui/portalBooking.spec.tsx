@@ -77,10 +77,10 @@ describe('PortalBooking', () => {
   })
 
   it('shows progress while requesting and verifying a customer code', async () => {
-    let resolveCodeRequest: (value: Response) => void = (_value) => {
+    let resolveCodeRequest: (value: Response) => void = () => {
       throw new Error('La demande de code ne démarre pas')
     }
-    let resolveCodeVerification: (value: Response) => void = (_value) => {
+    let resolveCodeVerification: (value: Response) => void = () => {
       throw new Error('La vérification du code ne démarre pas')
     }
     let customerFetchCount = 0

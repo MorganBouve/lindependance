@@ -156,7 +156,7 @@ describe('TestCampaignDetail', () => {
   })
 
   it('shows progress while closing a campaign', async () => {
-    let resolveClose: (response: Response) => void = (_response) => {
+    let resolveClose: (response: Response) => void = () => {
       throw new Error('La clôture de la campagne ne démarre pas')
     }
     const fetchMock = vi.fn()
